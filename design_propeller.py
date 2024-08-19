@@ -6,11 +6,13 @@ import math
 R = 0.9144
 T = 869.2
 RPM = 2600
+rho = 1.1848
 omega = RPM * 2 * math.pi / 60
 B = 2
 V = 53.64
 dbyl = 0.025
 lbyd = 1 / dbyl
+Tc = 2 * T / (rho * V**2 * R**2 * math.pi)
 
 # arrays for r/R
 n = 100
@@ -30,9 +32,8 @@ for i in range(n):
 I2 = 0
 for i in range(n):
     I2 += 2 * G[i] * (1 - dbyl / x[i]) / (1 + x[i]**2) * r_R[i] * 1 / n
-print('I1: ', I1)
-print('I2: ', I2)
-zeta = I1 / (2 * I2) * (1 - math.sqrt(1 - 4 * I2 * T / I1**2)) 
+
+zeta = I1 / (2 * I2) * (1 - math.sqrt(1 - 4 * I2 * Tc / I1**2)) 
 v_dash = zeta * V
 
 # Calculate Circulation
