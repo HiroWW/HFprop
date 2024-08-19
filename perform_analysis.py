@@ -49,15 +49,17 @@ airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
 # v_dash = fsolve(equation, 1)
 
-v_dash = np.zeros_like(r_R)  # v_dashを初期化
+# v_dash = np.zeros_like(r_R)  # v_dashを初期化
 
-for i in range(len(r_R)):
-    def equation(v_dash_i):
-        aoa = beta[i] - np.arctan(x[i] * R / r[i] * (1 + 1/2 * v_dash_i / V))
-        cl = np.interp(aoa, alpha, airfoil_cl)
-        return V * c_R[i] * cl / v_dash_i - 4 * math.pi / B * lamda / np.sqrt(1 + x[i]**2) * G[i]
+# for i in range(len(r_R)):
 
-    v_dash[i] = fsolve(equation, 1)[0]
+def equation(v_dash_i):
+    i = n - 2
+    aoa = beta[i] - np.arctan(x[i] * R / r[i] * (1 + 1/2 * v_dash_i / V))
+    cl = np.interp(aoa, alpha, airfoil_cl)
+    return V * c_R[i] * cl / v_dash_i - 4 * math.pi / B * lamda / np.sqrt(1 + x[i]**2) * G[i]
+
+v_dash = fsolve(equation, 1)
 
 # Calculate Circulation
 Gamma = 2 * np.pi * r * v_dash * x / (1 + x**2) * F / B
@@ -71,9 +73,9 @@ plt.ylabel('Circulation')
 plt.savefig('circulation.png')
 # plot v_dash
 plt.clf()
-plt.plot(r_R, v_dash)
-# set y-axis limit
-plt.ylim(0, 100.5)
-plt.xlabel('r/R')
-plt.ylabel('v_dash')
-plt.savefig('v_dash.png')
+# plt.plot(r_R, v_dash)
+# # set y-axis limit
+# plt.ylim(0, 100.5)
+# plt.xlabel('r/R')
+# plt.ylabel('v_dash')
+# plt.savefig('v_dash.png')
