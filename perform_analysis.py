@@ -64,6 +64,10 @@ v_dash = fsolve(equation, 1)
 # Calculate Circulation
 Gamma = 2 * np.pi * r * v_dash * x / (1 + x**2) * F / B
 
+# Calculate induced velocity component tangential to the rotor plane
+print('v_dash: ', v_dash)
+v_i = v_dash * x**2 / (1 + x**2)
+
 # Plot Results
 print('Advance Ratio: ', lamda)
 # plot circulation
@@ -73,9 +77,9 @@ plt.ylabel('Circulation')
 plt.savefig('circulation.png')
 # plot v_dash
 plt.clf()
-# plt.plot(r_R, v_dash)
-# # set y-axis limit
-# plt.ylim(0, 100.5)
-# plt.xlabel('r/R')
-# plt.ylabel('v_dash')
-# plt.savefig('v_dash.png')
+plt.plot(r_R, v_i/340/2*F)
+# set y-axis limit
+plt.ylim(0, 0.2)
+plt.xlabel('r/R')
+plt.ylabel('v_i')
+plt.savefig('v_i.png')
