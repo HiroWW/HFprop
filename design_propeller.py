@@ -9,7 +9,8 @@ RPM = 2600
 omega = RPM * 2 * math.pi / 60
 B = 2
 V = 53.64
-lbyd = 1 / 0.025
+dbyl = 0.025
+lbyd = 1 / dbyl
 
 # arrays for r/R
 n = 100
@@ -24,13 +25,14 @@ G = F * x**2 / (1 + x**2)
 # Calculate zeta ( = v_dash / V)
 I1 = 0
 for i in range(n):
-    I1 += 4 * G[i] * (1 - lbyd / x[i]) * r_R[i] * 1 / n
+    I1 += 4 * G[i] * (1 - dbyl / x[i]) * r_R[i] * 1 / n
 
 I2 = 0
 for i in range(n):
-    I2 += 2 * G[i] * (1 - lbyd / x[i]) / (1 + x[i]**2) * r_R[i] * 1 / n
-
-zeta = I1 / (2 * I2) * (1 - math.sqrt(1 - 4 * I2* T / I1**2)) 
+    I2 += 2 * G[i] * (1 - dbyl / x[i]) / (1 + x[i]**2) * r_R[i] * 1 / n
+print('I1: ', I1)
+print('I2: ', I2)
+zeta = I1 / (2 * I2) * (1 - math.sqrt(1 - 4 * I2 * T / I1**2)) 
 v_dash = zeta * V
 
 # Calculate Circulation
