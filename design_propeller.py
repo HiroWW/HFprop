@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 # general inputs
+# (for now, use the same values as in Larrabee, 1979 to validate the code) 
 R = 0.9144
 T = 869.2
 RPM = 2600
