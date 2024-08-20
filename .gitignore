@@ -8,7 +8,7 @@ __pycache__/
 
 # for me 
 ./qprop_validation.txt
-./secret/
+./secret/*
 
 # Distribution / packaging
 .Python
