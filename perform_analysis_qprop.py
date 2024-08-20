@@ -14,9 +14,11 @@ rho = 1.225
 omega = RPM * 2 * math.pi / 60
 B = 2
 V = 0.0
+CL0 = 0.1  # example
+DCLDA = 2 * math.pi  # example
 
 # arrays for r/R
-n = 30
+n = 300
 r_R = np.linspace(0.15, 1, n)
 r = r_R * R
 
@@ -31,9 +33,9 @@ beta = np.interp(r_R, geometry_r_R, geometry_beta)
 # load airfoil aerodynamic data and interpolate it to alpha
 alpha = np.linspace(-20, 20, n)
 airfoil = np.loadtxt('airfoil.txt')
-airfoil_alpha = airfoil[:, 1]
-airfoil_cl = airfoil[:, 3]
-airfoil_cd = airfoil[:, 2]
+airfoil_alpha = airfoil[:, 0]
+airfoil_cl = airfoil[:, 2]
+airfoil_cd = airfoil[:, 1]
 airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
@@ -77,6 +79,11 @@ for i in range(len(r_R)):
         cl = np.interp(aoa, alpha, airfoil_cl)
         lamda = r / R * Wa / Wt
         f = B / 2 * (1 - r/R) / lamda
+        if (np.exp(-f) < -1 or np.exp(-f) > 1):
+            print("f: ", f)
+            print("exp(-f): ", np.exp(-f))
+            print("r: ", r)
+            print("psi: ", psi) 
         F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
         gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
@@ -94,7 +101,7 @@ for i in range(len(r_R)):
     # initial guess for psi (from QPROP, Drela, 2007)
     Ua = V
     Ut = omega * r[i]
-    initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i]))
+    initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i])+ CL0 / DCLDA)
     psi[i] = fsolve(equation, initial_guess)[0]
 
 # plot psi
