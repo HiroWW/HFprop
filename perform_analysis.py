@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
-
+from scipy.optimize import minimize
 # general inputs
 # for now, use the same values as in Kawasaki et.al, 2024 to validate the code
 R = 0.1143
@@ -19,11 +19,12 @@ V = 8.5
 n = 1000
 r_R = np.linspace(0.01, 1, n)
 r = r_R * R
-x = omega * r / V 
 lamda = V / (omega * R)
 f = B / 2 * math.sqrt(lamda**2 + 1) / lamda * (1 - r_R)
 F = 2 / np.pi * np.arccos(np.exp(-f))
-G = F * x**2 / (1 + x**2)
+
+# x = omega * r / V 
+# G = F * x**2 / (1 + x**2)
 
 # load gemoetry txt and interpolate it to r/R
 geometry = np.loadtxt('geometry.txt')
@@ -49,37 +50,61 @@ airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
 # v_dash = fsolve(equation, 1)
 
-# v_dash = np.zeros_like(r_R)  # v_dashを初期化
+# r_Rと同じ要素数の二次元配列solutionを作成
+solution = np.zeros((len(r_R), 2))
 
-# for i in range(len(r_R)):
+# r_Rと同じ要素数の二次元配列solutionを作成
+solution = np.zeros((len(r_R), 2))
+# solu = np.zeros_like(r_R)  # v_dashを初期化
 
-def equation(v_dash_i):
-    i = n - 2
-    aoa = beta[i] - np.arctan(x[i] * R / r[i] * (1 + 1/2 * v_dash_i / V))
-    cl = np.interp(aoa, alpha, airfoil_cl)
-    return V * c_R[i] * cl / v_dash_i - 4 * math.pi / B * lamda / np.sqrt(1 + x[i]**2) * G[i]
+for i in range(len(r_R)):
 
-v_dash = fsolve(equation, 1)
+    def equations(vars):
+        phi_b, phi_s = vars
+        w =  (math.sin(phi_b) - V) / math.cos(phi_b)
+        aoa = beta[i] - phi_b
+        cl = np.interp(aoa, alpha, airfoil_cl)
+        W = (w*math.cos(phi_b) + V) / math.cos(phi_b)
+        dl = 1/2 * rho * W**2 * c_R[i] * cl
+        eq1 = (math.sin(phi_b) - V) / math.cos(phi_b) - (math.sin(phi_s) - V) / math.cos(phi_s)
+        eq2 = rho * (omega*r_R[i]*R - w*math.sin(phi_b)) / math.cos(phi_b) * 2 * math.pi / B * r_R[i] * R * 0.5*w * math.sin(phi_s) * F[i] - dl
+        return [eq1, eq2]
 
-# Calculate Circulation
-Gamma = 2 * np.pi * r * v_dash * x / (1 + x**2) * F / B
+    solution[i] = fsolve(equations, (1, 1))
 
-# Calculate induced velocity component tangential to the rotor plane
-print('v_dash: ', v_dash)
-v_i = v_dash * x**2 / (1 + x**2)
+# convert to degree and print solution
+phi_b = solution[:, 0] * 180 / math.pi
+phi_s = solution[:, 1] * 180 / math.pi
 
-# Plot Results
-print('Advance Ratio: ', lamda)
-# plot circulation
-plt.plot(r_R, Gamma)
+print('phi_b: ', phi_b[0])
+print('phi_s: ', phi_s[0])
+#plot phi_b and phi_s
+plt.plot(r_R, phi_b)
+plt.plot(r_R, phi_s)
 plt.xlabel('r/R')
-plt.ylabel('Circulation')
-plt.savefig('circulation.png')
-# plot v_dash
-plt.clf()
-plt.plot(r_R, v_i/340/2*F)
-# set y-axis limit
-plt.ylim(0, 0.2)
-plt.xlabel('r/R')
-plt.ylabel('v_i')
-plt.savefig('v_i.png')
+plt.ylabel('phi_b and phi_s')
+plt.savefig('phi_b_s.png')
+
+
+# # Calculate Circulation
+# Gamma = 2 * np.pi * r * v_dash * x / (1 + x**2) * F / B
+
+# # Calculate induced velocity component tangential to the rotor plane
+# print('v_dash: ', v_dash)
+# v_i = v_dash * x**2 / (1 + x**2)
+
+# # Plot Results
+# print('Advance Ratio: ', lamda)
+# # plot circulation
+# plt.plot(r_R, Gamma)
+# plt.xlabel('r/R')
+# plt.ylabel('Circulation')
+# plt.savefig('circulation.png')
+# # plot v_dash
+# plt.clf()
+# plt.plot(r_R, v_i/340/2*F)
+# # set y-axis limit
+# plt.ylim(0, 0.2)
+# plt.xlabel('r/R')
+# plt.ylabel('v_i')
+# plt.savefig('v_i.png')
