@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
 from scipy.optimize import minimize
+# THIS IS A VERSION COMPLETELY SAME TO QPROP
+# ESPECIALLY FOR THE EQUATION
+
 # general inputs
 # for now, use the same values as in Kawasaki et.al, 2024 to validate the code
 R = 0.1143
@@ -16,9 +19,6 @@ V = 8.5
 n = 1000
 r_R = np.linspace(0.01, 1, n)
 r = r_R * R
-lamda = V / (omega * R)
-f = B / 2 * math.sqrt(lamda**2 + 1) / lamda * (1 - r_R)
-F = 2 / np.pi * np.arccos(np.exp(-f))
 
 # load gemoetry txt and interpolate it to r/R
 geometry = np.loadtxt('geometry.txt')
@@ -38,7 +38,7 @@ airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
 
-psis = np.zeros(len(r_R))
+psi = np.zeros(len(r_R))
 
 for i in range(len(r_R)):
     def equation(psi):
@@ -48,36 +48,44 @@ for i in range(len(r_R)):
         U = math.sqrt(Ua**2 + Ut**2)
         Wa = 1/2 * Ua + 1/2 * U * np.sin(psi)
         Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
-        W = np.sqrt(Wa**2 + Wt**2)
         va = Wa - Ua
         vt = Ut - Wt
         aoa = beta[i] - np.arctan(Wa / Wt)
+        W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl)
-        gamma = vt * 4 * math.pi * r / B * F[i]
+        lamda = r / R * Wa / Wt
+        f = B / 2 * (1 - r/R) / lamda
+        F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+        gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
         return gamma - 1/2 * W * c * cl
-
-    psis[i] = fsolve(equation, 1)[0]
+    # initial guess for psi (from QPROP, Drela, 2007)
+    Ua = V
+    Ut = omega * r
+    initial_guess = np.maximum(np.arctan2(Ua, Ut), beta[i])
+    psi[i] = fsolve(equation, initial_guess)[0]
 
 # plot psi
-plt.plot(r_R, psis)
+plt.plot(r_R, psi)
 plt.xlabel('r/R')
 plt.ylabel('psi')
 plt.savefig('./debug/psi.png')
-
 
 r = r_R * R
 Ua = V
 Ut = omega * r
 U = np.sqrt(Ua**2 + Ut**2)
-Wa = 1/2 * Ua + 1/2 * U * np.sin(psis)
-Wt = 1/2 * Ut + 1/2 * U * np.cos(psis)
+Wa = 1/2 * Ua + 1/2 * U * np.sin(psi)
+Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
 W = np.sqrt(Wa**2 + Wt**2)
 va = Wa - Ua
 vt = Ut - Wt
 aoa = beta - np.arctan(Wa / Wt)
 cl = np.interp(aoa, alpha, airfoil_cl)
-gamma = vt * 4 * math.pi * r / B * F
+lamda = r / R * Wa / Wt
+f = B / 2 * (1 - r/R) / lamda
+F = 2 / math.pi * np.arccos(np.exp(-f))
+gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
 
 # plot gamma
 plt.clf()
