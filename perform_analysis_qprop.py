@@ -131,6 +131,7 @@ qprop = np.loadtxt('qprop_validation.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_Wa  = qprop[:, 9]
+qprop_cl  = qprop[:, 3]
 # plot gamma
 plt.clf()
 plt.plot(r_R, -va/340*F)
@@ -145,3 +146,11 @@ plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('Wa')
 plt.savefig('./debug/Wa.png')
+#plot cl
+plt.clf()
+plt.plot(r_R, cl, label='calculated')
+plt.plot(qprop_r_R, qprop_cl, label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('cl')
+plt.savefig('./debug/cl-r.png')
