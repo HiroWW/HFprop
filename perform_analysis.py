@@ -42,6 +42,27 @@ airfoil_cl = airfoil[:, 3]
 airfoil_cd = airfoil[:, 2]
 airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
+# plot cl ,cd - aoa, beta,c_R - r_R
+plt.plot(alpha, airfoil_cl)
+plt.xlabel('alpha')
+plt.ylabel('cl')
+plt.savefig('./debug/cl.png')
+plt.clf()
+plt.plot(alpha, airfoil_cd)
+plt.xlabel('alpha')
+plt.ylabel('cd')
+plt.savefig('./debug/cd.png')
+plt.clf()
+plt.plot(r_R, c_R)
+plt.xlabel('r/R')
+plt.ylabel('c_R')
+plt.savefig('./debug/c_R.png')
+plt.clf()
+plt.plot(r_R, beta)
+plt.xlabel('r/R')
+plt.ylabel('beta')
+plt.savefig('./debug/beta.png')
+plt.clf()
 
 # def equation(v_dash):
 #     aoa = beta - np.arctan(x * R / r * (1 + 1/2 * v_dash / V))
@@ -55,14 +76,28 @@ solution = np.zeros((len(r_R), 2))
 
 # r_Rと同じ要素数の二次元配列solutionを作成
 solution = np.zeros((len(r_R), 2))
-# solu = np.zeros_like(r_R)  # v_dashを初期化
+
+# for i in range(len(r_R)):
+
+#     def equations(vars):
+#         phi_b, phi_s = vars
+#         w =  (math.sin(phi_b) - V) / math.cos(phi_b)
+#         aoa = beta[i] - phi_b*180/math.pi
+#         cl = np.interp(aoa, alpha, airfoil_cl)
+#         W = (w*math.cos(phi_b) + V) / math.cos(phi_b)
+#         dl = 1/2 * rho * W**2 * c_R[i] * cl
+#         eq1 = (math.sin(phi_b) - V) / math.cos(phi_b) - (math.sin(phi_s) - V) / math.cos(phi_s)
+#         eq2 = rho * (omega*r_R[i]*R - w*math.sin(phi_b)) / math.cos(phi_b) * 2 * math.pi / B * r_R[i] * R * 0.5*w * math.sin(phi_s) * F[i] - dl
+#         return [eq1, eq2]
+
+#     solution[i] = fsolve(equations, (1, 1))
 
 for i in range(len(r_R)):
 
     def equations(vars):
         phi_b, phi_s = vars
         w =  (math.sin(phi_b) - V) / math.cos(phi_b)
-        aoa = beta[i] - phi_b
+        aoa = beta[i] - phi_b*180/math.pi
         cl = np.interp(aoa, alpha, airfoil_cl)
         W = (w*math.cos(phi_b) + V) / math.cos(phi_b)
         dl = 1/2 * rho * W**2 * c_R[i] * cl
@@ -70,8 +105,24 @@ for i in range(len(r_R)):
         eq2 = rho * (omega*r_R[i]*R - w*math.sin(phi_b)) / math.cos(phi_b) * 2 * math.pi / B * r_R[i] * R * 0.5*w * math.sin(phi_s) * F[i] - dl
         return [eq1, eq2]
 
-    solution[i] = fsolve(equations, (1, 1))
+    def objective(vars):
+        eqs = equations(vars)
+        return eqs[0]**2 + eqs[1]**2  # 残差の二乗和を最小化
 
+    # 制約条件: 0 <= phi_b, phi_s <= 90度
+    constraints = [{'type': 'ineq', 'fun': lambda vars: vars[0]},            # phi_b >= 0
+                   {'type': 'ineq', 'fun': lambda vars: np.pi/2 - vars[0]},  # phi_b <= 90度
+                   {'type': 'ineq', 'fun': lambda vars: vars[1]},            # phi_s >= 0
+                   {'type': 'ineq', 'fun': lambda vars: np.pi/2 - vars[1]}]  # phi_s <= 90度
+
+    # 初期推定値
+    initial_guess = np.radians([0.6, 0.5])
+
+    # minimizeを使って最適化
+    result = minimize(objective, initial_guess, constraints=constraints)
+
+    # 解を保存
+    solution[i] = result.x
 # convert to degree and print solution
 phi_b = solution[:, 0] * 180 / math.pi
 phi_s = solution[:, 1] * 180 / math.pi
