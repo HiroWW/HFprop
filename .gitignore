@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # for me 
-./qprop_validation.txt
+qprop_validation.txt
 secret/
 
 # Distribution / packaging
