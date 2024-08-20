@@ -13,11 +13,11 @@ RPM = 5000
 rho = 1.225
 omega = RPM * 2 * math.pi / 60
 B = 2
-V = 8.5
+V = 0.0
 
 # arrays for r/R
-n = 1000
-r_R = np.linspace(0.01, 1, n)
+n = 30
+r_R = np.linspace(0.15, 1, n)
 r = r_R * R
 
 # load gemoetry txt and interpolate it to r/R
@@ -37,10 +37,32 @@ airfoil_cd = airfoil[:, 2]
 airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
+plt.plot(alpha, airfoil_cl)
+plt.xlabel('alpha')
+plt.ylabel('cl')
+plt.savefig('./debug/cl.png')
+plt.clf()
+plt.plot(alpha, airfoil_cd)
+plt.xlabel('alpha')
+plt.ylabel('cd')
+plt.savefig('./debug/cd.png')
+plt.clf()
+plt.plot(r_R, c_R)
+plt.xlabel('r/R')
+plt.ylabel('c_R')
+plt.savefig('./debug/c_R.png')
+plt.clf()
+plt.plot(r_R, beta)
+plt.xlabel('r/R')
+plt.ylabel('beta')
+plt.savefig('./debug/beta.png')
+plt.clf()
 
 psi = np.zeros(len(r_R))
 
 for i in range(len(r_R)):
+
+    # print("")
     def equation(psi):
         r = r_R[i] * R
         Ua = V
@@ -50,7 +72,7 @@ for i in range(len(r_R)):
         Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
         va = Wa - Ua
         vt = Ut - Wt
-        aoa = beta[i] - np.arctan(Wa / Wt)
+        aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl)
         lamda = r / R * Wa / Wt
@@ -58,11 +80,21 @@ for i in range(len(r_R)):
         F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
         gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
+        # if (i==4):
+        #     print("gamma: ", gamma)
+        #     print("cl: ", cl)
+        #     print("c: ", c)
+        #     print("aoa: ", aoa)
+        #     print("Wa: ", Wa)
+        #     print("Wt: ", Wt)
+        #     print("psi: ", np.degrees(psi))
+        #     print("beta: ", beta[i])
+        #     print("phi: ", np.degrees(np.arctan(Wa / Wt)))
         return gamma - 1/2 * W * c * cl
     # initial guess for psi (from QPROP, Drela, 2007)
     Ua = V
-    Ut = omega * r
-    initial_guess = np.maximum(np.arctan2(Ua, Ut), beta[i])
+    Ut = omega * r[i]
+    initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i]))
     psi[i] = fsolve(equation, initial_guess)[0]
 
 # plot psi
@@ -84,12 +116,12 @@ aoa = beta - np.arctan(Wa / Wt)
 cl = np.interp(aoa, alpha, airfoil_cl)
 lamda = r / R * Wa / Wt
 f = B / 2 * (1 - r/R) / lamda
-F = 2 / math.pi * np.arccos(np.exp(-f))
+F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
 gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
 
 # plot gamma
 plt.clf()
-plt.plot(r_R, -va/340)
+plt.plot(r_R, -va/340*F)
 plt.xlabel('r/R')
 plt.ylabel('va')
 plt.savefig('./debug/va.png')
