@@ -119,9 +119,22 @@ f = B / 2 * (1 - r/R) / lamda
 F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
 gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
 
+# load gemoetry txt and interpolate it to r/R
+qprop = np.loadtxt('qprop_validation.txt')
+qprop_r_R = qprop[:, 0] / R
+qprop_c_R = qprop[:, 1] / R
+qprop_Wa  = qprop[:, 9]
 # plot gamma
 plt.clf()
 plt.plot(r_R, -va/340*F)
 plt.xlabel('r/R')
 plt.ylabel('va')
 plt.savefig('./debug/va.png')
+plt.clf()
+# plot Wa
+plt.plot(r_R, Wa, label='calculated')
+plt.plot(qprop_r_R, qprop_Wa, label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('Wa')
+plt.savefig('./debug/Wa.png')

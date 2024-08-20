@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# for me 
+./qprop_validation.txt
+./secret
+
 # Distribution / packaging
 .Python
 build/
