@@ -59,8 +59,6 @@ plt.clf()
 psi = np.zeros(len(r_R))
 
 for i in range(len(r_R)):
-
-    # print("")
     def equation(psi):
         r = r_R[i] * R
         Ua = V
@@ -83,16 +81,6 @@ for i in range(len(r_R)):
         F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
         gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
-        # if (i==4):
-        #     print("gamma: ", gamma)
-        #     print("cl: ", cl)
-        #     print("c: ", c)
-        #     print("aoa: ", aoa)
-        #     print("Wa: ", Wa)
-        #     print("Wt: ", Wt)
-        #     print("psi: ", np.degrees(psi))
-        #     print("beta: ", beta[i])
-        #     print("phi: ", np.degrees(np.arctan(Wa / Wt)))
         return gamma - 1/2 * W * c * cl
     # initial guess for psi (from QPROP, Drela, 2007)
     Ua = V
@@ -115,7 +103,7 @@ Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
 W = np.sqrt(Wa**2 + Wt**2)
 va = Wa - Ua
 vt = Ut - Wt
-aoa = beta - np.arctan(Wa / Wt)
+aoa = beta - np.degrees(np.arctan(Wa / Wt))
 cl = np.interp(aoa, alpha, airfoil_cl)
 lamda = r / R * Wa / Wt
 f = B / 2 * (1 - r/R) / lamda
@@ -127,11 +115,12 @@ qprop = np.loadtxt('qprop_validation.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_beta = qprop[:, 2]
+qprop_W = qprop[:, 6] * 340
 qprop_Wa  = qprop[:, 9]
 qprop_cl  = qprop[:, 3]
 # plot c_R
 plt.clf()
-plt.plot(r_R, c_R, marker='o',label='calculated')
+plt.plot(r_R, c_R, marker='o',label='in-house')
 plt.plot(qprop_r_R, qprop_c_R, marker='o',label='qprop')
 plt.legend()
 plt.xlabel('r/R')
@@ -139,12 +128,20 @@ plt.ylabel('c_R')
 plt.savefig('./debug/c_R.png')
 # plot beta
 plt.clf()
-plt.plot(r_R, beta, marker='o',label='calculated')
+plt.plot(r_R, beta, marker='o',label='in-house')
 plt.plot(qprop_r_R, qprop_beta, marker='o',label='qprop')
 plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('beta')
 plt.savefig('./debug/beta.png')
+# plot W
+plt.clf()
+plt.plot(r_R, W, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_W, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('W')
+plt.savefig('./debug/W.png')
 # plot gamma
 plt.clf()
 plt.plot(r_R, -va/340*F)
@@ -153,7 +150,7 @@ plt.ylabel('va')
 plt.savefig('./debug/va.png')
 # plot Wa
 plt.clf()
-plt.plot(r_R, Wa, marker='o', label='calculated')
+plt.plot(r_R, Wa, marker='o', label='in-house')
 plt.plot(qprop_r_R, qprop_Wa,  marker='o',label='qprop')
 plt.legend()
 plt.xlabel('r/R')
@@ -161,7 +158,7 @@ plt.ylabel('Wa')
 plt.savefig('./debug/Wa.png')
 #plot cl
 plt.clf()
-plt.plot(r_R, cl, marker='o', label='calculated')
+plt.plot(r_R, cl, marker='o', label='in-house')
 plt.plot(qprop_r_R, qprop_cl, marker='o', label='qprop')
 plt.legend()
 plt.xlabel('r/R')
