@@ -120,6 +120,22 @@ qprop_f = B / 2 * (1 - r/R) / qprop_lamda
 qprop_F = 2 / math.pi * np.arccos(np.clip(np.exp(-qprop_f), -1, 1))
 qprop_vt = omega * r - qprop_Wt
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
+# plot F
+plt.clf()
+plt.plot(r_R, F, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_F, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('F')
+plt.savefig('./debug/F.png')
+# plot vt
+plt.clf()
+plt.plot(r_R, vt, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_vt, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('vt')
+plt.savefig('./debug/vt.png')
 # plot c_R
 plt.clf()
 plt.plot(r_R, c_R, marker='o',label='in-house')
