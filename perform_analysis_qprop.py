@@ -113,6 +113,13 @@ qprop_beta = qprop[:, 2]
 qprop_W = qprop[:, 6] * 340
 qprop_Wa  = qprop[:, 9]
 qprop_cl  = qprop[:, 3]
+qprop_psi = np.arcsin((qprop_Wa - 0.5*V) / (0.5*U))
+qprop_Wt = np.sqrt(qprop_W**2 - qprop_Wa**2)
+qprop_lamda = r / R * qprop_Wa / qprop_Wt
+qprop_f = B / 2 * (1 - r/R) / qprop_lamda
+qprop_F = 2 / math.pi * np.arccos(np.clip(np.exp(-qprop_f), -1, 1))
+qprop_vt = omega * r - qprop_Wt
+qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 # plot c_R
 plt.clf()
 plt.plot(r_R, c_R, marker='o',label='in-house')
@@ -137,11 +144,20 @@ plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('W')
 plt.savefig('./debug/W.png')
+# plot psi
+plt.clf()
+plt.plot(r_R, psi, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_psi, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('psi')
+plt.savefig('./debug/psi.png')
 # plot gamma
 plt.clf()
 plt.plot(r_R, gamma, marker='o',label='in-house(wake)')
 plt.plot(r_R, 0.5*W*c_R*R*cl, marker='o',label='in-house(on-blade)')
-plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop')
+plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop(on-blade)')
+plt.plot(qprop_r_R, qprop_gamma, marker='o',label='qprop(wake)')
 plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('gamma')
