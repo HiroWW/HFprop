@@ -14,12 +14,17 @@ rho = 1.225
 omega = RPM * 2 * math.pi / 60
 B = 2
 V = 0.0
-CL0 = 0.1  # example
+CL0 = math.radians(-6)  # example
 DCLDA = 2 * math.pi  # example
 
 # arrays for r/R
-n = 300
-r_R = np.linspace(0.15, 1, n)
+n = 25
+start = 0.15
+end = 1.0
+# 区間の端点を取得
+edges = np.linspace(start, end, n+1)
+# 各区間の中心を計算
+r_R = (edges[:-1] + edges[1:]) / 2
 r = r_R * R
 
 # load gemoetry txt and interpolate it to r/R
@@ -48,16 +53,7 @@ plt.plot(alpha, airfoil_cd)
 plt.xlabel('alpha')
 plt.ylabel('cd')
 plt.savefig('./debug/cd.png')
-plt.clf()
-plt.plot(r_R, c_R)
-plt.xlabel('r/R')
-plt.ylabel('c_R')
-plt.savefig('./debug/c_R.png')
-plt.clf()
-plt.plot(r_R, beta)
-plt.xlabel('r/R')
-plt.ylabel('beta')
-plt.savefig('./debug/beta.png')
+
 plt.clf()
 
 psi = np.zeros(len(r_R))
@@ -130,26 +126,43 @@ gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B
 qprop = np.loadtxt('qprop_validation.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
+qprop_beta = qprop[:, 2]
 qprop_Wa  = qprop[:, 9]
 qprop_cl  = qprop[:, 3]
+# plot c_R
+plt.clf()
+plt.plot(r_R, c_R, marker='o',label='calculated')
+plt.plot(qprop_r_R, qprop_c_R, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('c_R')
+plt.savefig('./debug/c_R.png')
+# plot beta
+plt.clf()
+plt.plot(r_R, beta, marker='o',label='calculated')
+plt.plot(qprop_r_R, qprop_beta, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('beta')
+plt.savefig('./debug/beta.png')
 # plot gamma
 plt.clf()
 plt.plot(r_R, -va/340*F)
 plt.xlabel('r/R')
 plt.ylabel('va')
 plt.savefig('./debug/va.png')
-plt.clf()
 # plot Wa
-plt.plot(r_R, Wa, label='calculated')
-plt.plot(qprop_r_R, qprop_Wa, label='qprop')
+plt.clf()
+plt.plot(r_R, Wa, marker='o', label='calculated')
+plt.plot(qprop_r_R, qprop_Wa,  marker='o',label='qprop')
 plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('Wa')
 plt.savefig('./debug/Wa.png')
 #plot cl
 plt.clf()
-plt.plot(r_R, cl, label='calculated')
-plt.plot(qprop_r_R, qprop_cl, label='qprop')
+plt.plot(r_R, cl, marker='o', label='calculated')
+plt.plot(qprop_r_R, qprop_cl, marker='o', label='qprop')
 plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('cl')
