@@ -70,14 +70,9 @@ for i in range(len(r_R)):
         vt = Ut - Wt
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
-        cl = np.interp(aoa, alpha, airfoil_cl)
+        cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
         lamda = r / R * Wa / Wt
         f = B / 2 * (1 - r/R) / lamda
-        if (np.exp(-f) < -1 or np.exp(-f) > 1):
-            print("f: ", f)
-            print("exp(-f): ", np.exp(-f))
-            print("r: ", r)
-            print("psi: ", psi) 
         F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
         gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
@@ -143,6 +138,15 @@ plt.xlabel('r/R')
 plt.ylabel('W')
 plt.savefig('./debug/W.png')
 # plot gamma
+plt.clf()
+plt.plot(r_R, gamma, marker='o',label='in-house(wake)')
+plt.plot(r_R, 0.5*W*c_R*R*cl, marker='o',label='in-house(on-blade)')
+plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('gamma')
+plt.savefig('./debug/gamma.png')
+# plot va
 plt.clf()
 plt.plot(r_R, -va/340*F)
 plt.xlabel('r/R')
