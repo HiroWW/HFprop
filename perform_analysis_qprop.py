@@ -119,6 +119,9 @@ qprop_lamda = r / R * qprop_Wa / qprop_Wt
 qprop_f = B / 2 * (1 - r/R) / qprop_lamda
 qprop_F = 2 / math.pi * np.arccos(np.clip(np.exp(-qprop_f), -1, 1))
 qprop_vt = omega * r - qprop_Wt
+qprop_r = qprop_r_R * R
+qprop_Ut = omega * qprop_r
+qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 # plot F
 plt.clf()
@@ -136,6 +139,14 @@ plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('vt')
 plt.savefig('./debug/vt.png')
+# plot Wt
+plt.clf()
+# plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
+plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi)-qprop_Wt, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('Wt')
+plt.savefig('./debug/Wt.png')
 # plot c_R
 plt.clf()
 plt.plot(r_R, c_R, marker='o',label='in-house')
