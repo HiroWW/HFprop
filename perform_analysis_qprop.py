@@ -71,10 +71,12 @@ for i in range(len(r_R)):
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
-        lamda = r / R * Wa / Wt
-        f = B / 2 * (1 - r/R) / lamda
+        # lamda = r / R * Wa / Wt
+        lamda = V / R / omega 
+        # f = B / 2 * (1 - r/R) / lamda
+        f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
         F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-        gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+        gamma = vt * 4 * math.pi * r / B * F# * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         c = c_R[i] * R
         return gamma - 1/2 * W * c * cl
     # initial guess for psi (from QPROP, Drela, 2007)
