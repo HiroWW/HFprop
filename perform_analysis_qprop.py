@@ -58,7 +58,7 @@ plt.clf()
 
 psi = np.zeros(len(r_R))
 
-qpropFactorFlag = False
+qpropFactorFlag = True
 for i in range(len(r_R)):
     def equation(psi):
         r = r_R[i] * R
@@ -111,24 +111,18 @@ va = Wa - Ua
 vt = Ut - Wt
 aoa = beta - np.degrees(np.arctan(Wa / Wt))
 cl = np.interp(aoa, alpha, airfoil_cl)
-# if qpropFactorFlag:
-lamda = r / R * Wa / Wt
-f = B / 2 * (1 - r/R) / lamda
-F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-plt.clf()
-plt.plot(r_R, F, label='QPROP F')
-gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
-# else:
-lamda = V / R / omega 
-f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
-F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-plt.plot(r_R, F, label='Prandtl F')
-plt.legend()
-plt.savefig('./debug/F-compare.png')
-plt.clf()
-gamma = vt * 4 * math.pi * r / B * F
+if qpropFactorFlag:
+    lamda = r / R * Wa / Wt
+    f = B / 2 * (1 - r/R) / lamda
+    F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+    gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+else:
+    lamda = V / R / omega 
+    f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
+    F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+    gamma = vt * 4 * math.pi * r / B * F
 
-# load gemoetry txt and interpolate it to r/R
+# load qprop data for validation
 qprop = np.loadtxt('./secret/qprop_validation_advance.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
@@ -146,6 +140,7 @@ qprop_r = qprop_r_R * R
 qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
+
 # plot F
 plt.clf()
 plt.plot(r_R, F, marker='o',label='in-house')
@@ -164,8 +159,8 @@ plt.ylabel('vt')
 plt.savefig('./debug/vt.png')
 # plot Wt
 plt.clf()
-# plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
-plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi)-qprop_Wt, marker='o',label='qprop')
+plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
+plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi), marker='o',label='qprop')
 plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('Wt')
