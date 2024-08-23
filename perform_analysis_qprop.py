@@ -13,7 +13,7 @@ RPM = 5000
 rho = 1.225
 omega = RPM * 2 * math.pi / 60
 B = 2
-V = 0.0
+V = 8.5
 CL0 = math.radians(-6)  # example
 DCLDA = 2 * math.pi  # example
 
@@ -58,6 +58,7 @@ plt.clf()
 
 psi = np.zeros(len(r_R))
 
+qpropFactorFlag = False
 for i in range(len(r_R)):
     def equation(psi):
         r = r_R[i] * R
@@ -71,12 +72,20 @@ for i in range(len(r_R)):
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
-        # lamda = r / R * Wa / Wt
-        lamda = V / R / omega 
-        # f = B / 2 * (1 - r/R) / lamda
-        f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
-        F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-        gamma = vt * 4 * math.pi * r / B * F# * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+        print("Wa is ", Wa, "at r/R = ", r_R[i])
+        # --- qprop modify ---
+        if (qpropFactorFlag):
+            lamda = r / R * Wa / Wt
+            f = B / 2 * (1 - r/R) / lamda 
+            f = np.minimum(f, 20)
+            F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+            gamma = vt * 4 * math.pi * r / B #* F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+        # --- prandtl original ---
+        else:
+            lamda = V / R / omega 
+            f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
+            F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+            gamma = vt * 4 * math.pi * r / B * F
         c = c_R[i] * R
         return gamma - 1/2 * W * c * cl
     # initial guess for psi (from QPROP, Drela, 2007)
@@ -102,13 +111,25 @@ va = Wa - Ua
 vt = Ut - Wt
 aoa = beta - np.degrees(np.arctan(Wa / Wt))
 cl = np.interp(aoa, alpha, airfoil_cl)
+# if qpropFactorFlag:
 lamda = r / R * Wa / Wt
 f = B / 2 * (1 - r/R) / lamda
 F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+plt.clf()
+plt.plot(r_R, F, label='QPROP F')
 gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+# else:
+lamda = V / R / omega 
+f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
+F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+plt.plot(r_R, F, label='Prandtl F')
+plt.legend()
+plt.savefig('./debug/F-compare.png')
+plt.clf()
+gamma = vt * 4 * math.pi * r / B * F
 
 # load gemoetry txt and interpolate it to r/R
-qprop = np.loadtxt('qprop_validation.txt')
+qprop = np.loadtxt('./secret/qprop_validation_advance.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_beta = qprop[:, 2]
