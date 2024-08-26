@@ -99,6 +99,7 @@ plt.xlabel('r/R')
 plt.ylabel('psi')
 plt.savefig('./debug/psi.png')
 
+# post process
 r = r_R * R
 Ua = V
 Ut = omega * r
@@ -121,8 +122,45 @@ else:
     F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
     gamma = vt * 4 * math.pi * r / B * F
 
+# Define the header with explanations
+header = f'''HFPROP RESULT
+██╗  ██╗███████╗██████╗ ██████╗  ██████╗ ██████╗ 
+██║  ██║██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+███████║█████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
+██╔══██║██╔══╝  ██╔═══╝ ██╔══██╗██║   ██║██╔═══╝ 
+██║  ██║██║     ██║     ██║  ██║╚██████╔╝██║     
+╚═╝  ╚═╝╚═╝     ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝
+
+Hiroaki Fujiwara, 2024
+
+==== CALCULATION CONDITIONS
+RADIUS = {R} [m]
+RPM = {RPM}
+V = {V} [m/s]
+
+==== VARIABLES DESCRIPTION
+r: radial position [m]
+cl: lift coefficient [-]
+aoa: angle of attack [deg]
+Wa: axial velocity component [m/s]
+Wt: tangential velocity component [m/s]
+psi: azimuthal position [rad]
+Ut: tangential velocity [m/s]
+U: total velocity [m/s]
+W: resultant velocity [m/s]
+va: induced axial velocity [m/s]
+vt: induced tangential velocity [m/s]
+gamma: circulation [-]
+
+==== RESULTS
+r              cl                aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
+'''
+
+# Save the results to 'results.txt' with the specified format
+np.savetxt('results.txt', np.array([r, cl, aoa, Wa, Wt, psi, Ut, U, W, va, vt, gamma]).T,
+           header=header, fmt='%.14f')
 # load qprop data for validation
-qprop = np.loadtxt('./secret/qprop_validation_advance.txt')
+qprop = np.loadtxt('../secret/qprop_validation_advance.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_beta = qprop[:, 2]
