@@ -72,14 +72,13 @@ for i in range(len(r_R)):
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
-        print("Wa is ", Wa, "at r/R = ", r_R[i])
         # --- qprop modify ---
         if (qpropFactorFlag):
             lamda = r / R * Wa / Wt
             f = B / 2 * (1 - r/R) / lamda 
             f = np.minimum(f, 20)
             F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-            gamma = vt * 4 * math.pi * r / B #* F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+            gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
         # --- prandtl original ---
         else:
             lamda = V / R / omega 
@@ -115,7 +114,7 @@ if qpropFactorFlag:
     lamda = r / R * Wa / Wt
     f = B / 2 * (1 - r/R) / lamda
     F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
-    gamma = vt * 4 * math.pi * r / B #* F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+    gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
 else:
     lamda = V / R / omega 
     f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
@@ -139,7 +138,7 @@ qprop_vt = omega * r - qprop_Wt
 qprop_r = qprop_r_R * R
 qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
-qprop_gamma = qprop_vt * 4 * math.pi * r / B #* qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
+qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 
 # plot F
 plt.clf()
