@@ -3,28 +3,32 @@ import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
 from scipy.optimize import minimize
+# THIS IS A VERSION COMPLETELY SAME TO QPROP
+# ESPECIALLY FOR THE EQUATION
+
 # general inputs
 # for now, use the same values as in Kawasaki et.al, 2024 to validate the code
 R = 0.1143
 RPM = 5000
 rho = 1.225
-omega = RPM * 2 * math.pi / 60
 B = 2
 V = 8.5
-# dbyl = 0.025
-# lbyd = 1 / dbyl
-# Tc = 2 * T / (rho * V**2 * R**2 * math.pi)
+
+omega = RPM * 2 * math.pi / 60
+rps = RPM / 60
+J = V / (rps * 2 * R)
+CL0 = math.radians(-6)  # example
+DCLDA = 2 * math.pi  # example
 
 # arrays for r/R
-n = 1000
-r_R = np.linspace(0.01, 1, n)
+n = 25
+start = 0.15
+end = 1.0
+# 区間の端点を取得
+edges = np.linspace(start, end, n+1)
+# 各区間の中心を計算
+r_R = (edges[:-1] + edges[1:]) / 2
 r = r_R * R
-lamda = V / (omega * R)
-f = B / 2 * math.sqrt(lamda**2 + 1) / lamda * (1 - r_R)
-F = 2 / np.pi * np.arccos(np.exp(-f))
-
-# x = omega * r / V 
-# G = F * x**2 / (1 + x**2)
 
 # load gemoetry txt and interpolate it to r/R
 geometry = np.loadtxt('geometry.txt')
@@ -37,125 +41,252 @@ beta = np.interp(r_R, geometry_r_R, geometry_beta)
 # load airfoil aerodynamic data and interpolate it to alpha
 alpha = np.linspace(-20, 20, n)
 airfoil = np.loadtxt('airfoil.txt')
-airfoil_alpha = airfoil[:, 1]
-airfoil_cl = airfoil[:, 3]
-airfoil_cd = airfoil[:, 2]
+airfoil_alpha = airfoil[:, 0]
+airfoil_cl = airfoil[:, 2]
+airfoil_cd = airfoil[:, 1]
 airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
-# plot cl ,cd - aoa, beta,c_R - r_R
+
 plt.plot(alpha, airfoil_cl)
 plt.xlabel('alpha')
 plt.ylabel('cl')
-plt.savefig('./debug/cl.png')
+plt.savefig('./debug/cl-alpha.png')
 plt.clf()
 plt.plot(alpha, airfoil_cd)
 plt.xlabel('alpha')
 plt.ylabel('cd')
-plt.savefig('./debug/cd.png')
+plt.savefig('./debug/cd-alpha.png')
+
 plt.clf()
-plt.plot(r_R, c_R)
+
+# solve for psi by newton method
+psi = np.zeros(len(r_R))
+qpropFactorFlag = True
+for i in range(len(r_R)):
+    def equation(psi):
+        r = r_R[i] * R
+        Ua = V
+        Ut = omega * r
+        U = math.sqrt(Ua**2 + Ut**2)
+        Wa = 1/2 * Ua + 1/2 * U * np.sin(psi)
+        Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
+        va = Wa - Ua
+        vt = Ut - Wt
+        aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
+        W = np.sqrt(Wa**2 + Wt**2)
+        cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
+        # --- qprop modify ---
+        if (qpropFactorFlag):
+            lamda = r / R * Wa / Wt
+            f = B / 2 * (1 - r/R) / lamda 
+            f = np.minimum(f, 20)
+            F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+            gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+        # --- prandtl original ---
+        else:
+            lamda = V / R / omega 
+            f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
+            F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+            gamma = vt * 4 * math.pi * r / B * F
+        c = c_R[i] * R
+        return gamma - 1/2 * W * c * cl
+    # initial guess for psi (from QPROP, Drela, 2007)
+    Ua = V
+    Ut = omega * r[i]
+    initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i])+ CL0 / DCLDA)
+    psi[i] = fsolve(equation, initial_guess)[0]
+
+# plot psi
+plt.plot(r_R, psi)
+plt.xlabel('r/R')
+plt.ylabel('psi')
+plt.savefig('./debug/psi.png')
+
+# post process
+r = r_R * R
+c = c_R * R
+Ua = V
+Ut = omega * r
+U = np.sqrt(Ua**2 + Ut**2)
+Wa = 1/2 * Ua + 1/2 * U * np.sin(psi)
+Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
+W = np.sqrt(Wa**2 + Wt**2)
+va = Wa - Ua
+vt = Ut - Wt
+phi = np.arctan(Wa / Wt)
+aoa = beta - np.degrees(phi)
+cl = np.interp(aoa, alpha, airfoil_cl)
+cd = np.interp(aoa, alpha, airfoil_cd)
+dL = 1/2 * rho * W**2 * c * cl * B
+dD = 1/2 * rho * W**2 * c * cd * B
+dT = dL * np.cos(phi) - dD * np.sin(phi)
+dQ = (dL * np.sin(phi) + dD * np.cos(phi)) * r
+T = np.trapz(dT, r)
+Q = np.trapz(dQ, r)
+Ct = T / (rho * rps**2 * (2*R)**4)
+Cq = Q / (rho * rps**2 * (2*R)**5)
+Cp = Cq * 2 * math.pi
+if qpropFactorFlag:
+    lamda = r / R * Wa / Wt
+    f = B / 2 * (1 - r/R) / lamda
+    F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+    gamma = vt * 4 * math.pi * r / B * F * np.sqrt(1 + (4 * lamda * R / (math.pi * B * r ))**2)
+else:
+    lamda = V / R / omega 
+    f = B / 2 * (1 - r/R) / lamda *np.sqrt(lamda**2 + 1)
+    F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
+    gamma = vt * 4 * math.pi * r / B * F
+
+# Define the header with explanations
+header = f'''HFPROP RESULT
+██╗  ██╗███████╗██████╗ ██████╗  ██████╗ ██████╗ 
+██║  ██║██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+███████║█████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
+██╔══██║██╔══╝  ██╔═══╝ ██╔══██╗██║   ██║██╔═══╝ 
+██║  ██║██║     ██║     ██║  ██║╚██████╔╝██║     
+╚═╝  ╚═╝╚═╝     ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝
+
+Hiroaki Fujiwara, 2024
+
+==== CALCULATION CONDITIONS
+RADIUS = {R} [m]
+RPM = {RPM}
+V = {V} [m/s]
+J = {J}
+
+==== BASIC RESULTS
+Thrust = {T} [N]
+Torque = {Q} [Nm]
+Ct = {Ct} [UIUC definition]
+Cq = {Cq} [UIUC definition]
+Cp = {Cp} [UIUC definition]
+eta = {Ct * J / Cp} [UIUC definition]
+
+==== BLADE ELEMENT RESULTS
+r: radial position [m]
+cl: lift coefficient [-]
+aoa: angle of attack [deg]
+Wa: axial velocity component [m/s]
+Wt: tangential velocity component [m/s]
+psi: azimuthal position [rad]
+Ut: tangential velocity [m/s]
+U: total velocity [m/s]
+W: resultant velocity [m/s]
+va: induced axial velocity [m/s]
+vt: induced tangential velocity [m/s]
+gamma: circulation [-]
+r              cl                aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
+'''
+
+# Save the results to 'results.txt' with the specified format
+np.savetxt('results.txt', np.array([r, cl, aoa, Wa, Wt, psi, Ut, U, W, va, vt, gamma]).T,
+           header=header, fmt='%.14f')
+
+# load qprop data for validation
+qprop = np.loadtxt('../secret/qprop_validation_advance.txt')
+qprop_r_R = qprop[:, 0] / R
+qprop_c_R = qprop[:, 1] / R
+qprop_beta = qprop[:, 2]
+qprop_Wa  = qprop[:, 9]
+qprop_cl  = qprop[:, 3]
+qprop_psi = np.arcsin((qprop_Wa - 0.5*V) / (0.5*U))
+qprop_Wt = 0.5*Ut + 0.5*U*np.cos(qprop_psi)
+qprop_W = np.sqrt(qprop_Wa**2 + qprop_Wt**2) # Mach数を使わないで計算。
+qprop_lamda = r / R * qprop_Wa / qprop_Wt
+qprop_f = B / 2 * (1 - r/R) / qprop_lamda
+qprop_F = 2 / math.pi * np.arccos(np.clip(np.exp(-qprop_f), -1, 1))
+qprop_vt = omega * r - qprop_Wt
+qprop_r = qprop_r_R * R
+qprop_Ut = omega * qprop_r
+qprop_U = np.sqrt(V**2 + qprop_Ut**2)
+qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
+
+# plot results
+# plot F
+plt.clf()
+plt.plot(r_R, F, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_F, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('F')
+plt.savefig('./debug/F.png')
+# plot vt
+plt.clf()
+plt.plot(r_R, vt, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_vt, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('vt')
+plt.savefig('./debug/vt.png')
+# plot Wt
+plt.clf()
+plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
+plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi), marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('Wt')
+plt.savefig('./debug/Wt.png')
+# plot c_R
+plt.clf()
+plt.plot(r_R, c_R, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_c_R, marker='o',label='qprop')
+plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('c_R')
 plt.savefig('./debug/c_R.png')
+# plot beta
 plt.clf()
-plt.plot(r_R, beta)
+plt.plot(r_R, beta, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_beta, marker='o',label='qprop')
+plt.legend()
 plt.xlabel('r/R')
 plt.ylabel('beta')
 plt.savefig('./debug/beta.png')
+# plot W
 plt.clf()
-
-# def equation(v_dash):
-#     aoa = beta - np.arctan(x * R / r * (1 + 1/2 * v_dash / V))
-#     cl = np.interp(aoa, alpha, airfoil_cl)   
-#     return V * c_R * cl / v_dash - 4 * math.pi / B * lamda / np.sqrt(1 + x**2) * G
-
-# v_dash = fsolve(equation, 1)
-
-# r_Rと同じ要素数の二次元配列solutionを作成
-solution = np.zeros((len(r_R), 2))
-
-# r_Rと同じ要素数の二次元配列solutionを作成
-solution = np.zeros((len(r_R), 2))
-
-# for i in range(len(r_R)):
-
-#     def equations(vars):
-#         phi_b, phi_s = vars
-#         w =  (math.sin(phi_b) - V) / math.cos(phi_b)
-#         aoa = beta[i] - phi_b*180/math.pi
-#         cl = np.interp(aoa, alpha, airfoil_cl)
-#         W = (w*math.cos(phi_b) + V) / math.cos(phi_b)
-#         dl = 1/2 * rho * W**2 * c_R[i] * cl
-#         eq1 = (math.sin(phi_b) - V) / math.cos(phi_b) - (math.sin(phi_s) - V) / math.cos(phi_s)
-#         eq2 = rho * (omega*r_R[i]*R - w*math.sin(phi_b)) / math.cos(phi_b) * 2 * math.pi / B * r_R[i] * R * 0.5*w * math.sin(phi_s) * F[i] - dl
-#         return [eq1, eq2]
-
-#     solution[i] = fsolve(equations, (1, 1))
-
-for i in range(len(r_R)):
-
-    def equations(vars):
-        phi_b, phi_s = vars
-        w =  (math.sin(phi_b) - V) / math.cos(phi_b)
-        aoa = beta[i] - phi_b*180/math.pi
-        cl = np.interp(aoa, alpha, airfoil_cl)
-        W = (w*math.cos(phi_b) + V) / math.cos(phi_b)
-        dl = 1/2 * rho * W**2 * c_R[i] * cl
-        eq1 = (math.sin(phi_b) - V) / math.cos(phi_b) - (math.sin(phi_s) - V) / math.cos(phi_s)
-        eq2 = rho * (omega*r_R[i]*R - w*math.sin(phi_b)) / math.cos(phi_b) * 2 * math.pi / B * r_R[i] * R * 0.5*w * math.sin(phi_s) * F[i] - dl
-        return [eq1, eq2]
-
-    def objective(vars):
-        eqs = equations(vars)
-        return eqs[0]**2 + eqs[1]**2  # 残差の二乗和を最小化
-
-    # 制約条件: 0 <= phi_b, phi_s <= 90度
-    constraints = [{'type': 'ineq', 'fun': lambda vars: vars[0]},            # phi_b >= 0
-                   {'type': 'ineq', 'fun': lambda vars: np.pi/2 - vars[0]},  # phi_b <= 90度
-                   {'type': 'ineq', 'fun': lambda vars: vars[1]},            # phi_s >= 0
-                   {'type': 'ineq', 'fun': lambda vars: np.pi/2 - vars[1]}]  # phi_s <= 90度
-
-    # 初期推定値
-    initial_guess = np.radians([0.6, 0.5])
-
-    # minimizeを使って最適化
-    result = minimize(objective, initial_guess, constraints=constraints)
-
-    # 解を保存
-    solution[i] = result.x
-# convert to degree and print solution
-phi_b = solution[:, 0] * 180 / math.pi
-phi_s = solution[:, 1] * 180 / math.pi
-
-print('phi_b: ', phi_b[0])
-print('phi_s: ', phi_s[0])
-#plot phi_b and phi_s
-plt.plot(r_R, phi_b)
-plt.plot(r_R, phi_s)
+plt.plot(r_R, W, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_W, marker='o',label='qprop')
+plt.legend()
 plt.xlabel('r/R')
-plt.ylabel('phi_b and phi_s')
-plt.savefig('phi_b_s.png')
-
-
-# # Calculate Circulation
-# Gamma = 2 * np.pi * r * v_dash * x / (1 + x**2) * F / B
-
-# # Calculate induced velocity component tangential to the rotor plane
-# print('v_dash: ', v_dash)
-# v_i = v_dash * x**2 / (1 + x**2)
-
-# # Plot Results
-# print('Advance Ratio: ', lamda)
-# # plot circulation
-# plt.plot(r_R, Gamma)
-# plt.xlabel('r/R')
-# plt.ylabel('Circulation')
-# plt.savefig('circulation.png')
-# # plot v_dash
-# plt.clf()
-# plt.plot(r_R, v_i/340/2*F)
-# # set y-axis limit
-# plt.ylim(0, 0.2)
-# plt.xlabel('r/R')
-# plt.ylabel('v_i')
-# plt.savefig('v_i.png')
+plt.ylabel('W')
+plt.savefig('./debug/W.png')
+# plot psi
+plt.clf()
+plt.plot(r_R, psi, marker='o',label='in-house')
+plt.plot(qprop_r_R, qprop_psi, marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('psi')
+plt.savefig('./debug/psi.png')
+# plot gamma
+plt.clf()
+plt.plot(r_R, gamma, marker='o',label='in-house(wake)')
+plt.plot(r_R, 0.5*W*c_R*R*cl, marker='o',label='in-house(on-blade)')
+plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop(on-blade)')
+plt.plot(qprop_r_R, qprop_gamma, marker='o',label='qprop(wake)')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('gamma')
+plt.savefig('./debug/gamma.png')
+# plot va
+plt.clf()
+plt.plot(r_R, -va/340*F)
+plt.xlabel('r/R')
+plt.ylabel('va')
+plt.savefig('./debug/va.png')
+# plot Wa
+plt.clf()
+plt.plot(r_R, Wa, marker='o', label='in-house')
+plt.plot(qprop_r_R, qprop_Wa,  marker='o',label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('Wa')
+plt.savefig('./debug/Wa.png')
+#plot cl
+plt.clf()
+plt.plot(r_R, cl, marker='o', label='in-house')
+plt.plot(qprop_r_R, qprop_cl, marker='o', label='qprop')
+plt.legend()
+plt.xlabel('r/R')
+plt.ylabel('cl')
+plt.savefig('./debug/cl-r.png')
