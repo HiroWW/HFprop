@@ -62,7 +62,7 @@ r_R = (edges[:-1] + edges[1:]) / 2
 r = r_R * R
 
 # load gemoetry txt and interpolate it to r/R
-geometry = np.loadtxt('geometry.txt')
+geometry = np.loadtxt(args.geometry)
 geometry_r_R = geometry[:, 0]
 geometry_c_R = geometry[:, 1]
 c_R = np.interp(r_R, geometry_r_R, geometry_c_R)
@@ -71,7 +71,7 @@ beta = np.interp(r_R, geometry_r_R, geometry_beta)
 
 # load airfoil aerodynamic data and interpolate it to alpha
 alpha = np.linspace(-20, 20, n)
-airfoil = np.loadtxt('airfoil-qpropsame.txt')
+airfoil = np.loadtxt(args.airfoil)
 airfoil_alpha = airfoil[:, 0]
 airfoil_cl = airfoil[:, 2]
 airfoil_cd = airfoil[:, 1]
