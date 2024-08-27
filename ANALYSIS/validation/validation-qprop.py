@@ -4,7 +4,7 @@ import subprocess
 import os 
 from cycler import cycler
 import colorsys
-
+import re
 # load uiuc data
 uiuc_data = np.loadtxt('uiuc_apc9by4.7SF_rpm5013.txt', skiprows=2)
 uiuc_J = uiuc_data[:,0]
@@ -14,13 +14,14 @@ uiuc_eta = uiuc_data[:,3]
 rpm = 5013
 rps = rpm/60
 R = 0.1143
+rho = 1.225
 
-hfprop_Cp = []
-hfprop_Ct = []
-hfprop_eta = []
 hfprop_Cp_smoozedtable = []
 hfprop_Ct_smoozedtable = []
 hfprop_eta_smoozedtable = []
+qprop_Ct = []
+qprop_Cp = []
+qprop_eta = []
 
 os.chdir('..')
 
@@ -35,25 +36,6 @@ for J in uiuc_J:
         f.write('B = 2\n')
         f.write('V = {}\n'.format(V))
         f.write('plotsave = False\n')
-    # run the calculation
-    subprocess.run(['python3', 'perform_analysis.py'])
-    # load the results and append to the list
-    with open('results.txt', 'r') as file:
-        for line in file:
-            # Skip lines that don't contain the relevant data
-            if not line.startswith('#'):
-                continue
-
-            # Check and extract the values for Ct, Cp, and eta
-            if 'Ct =' in line:
-                Ct = float(line.split('=')[1].strip().split()[0])
-            elif 'Cp =' in line:
-                Cp = float(line.split('=')[1].strip().split()[0])
-            elif 'eta =' in line:
-                eta = float(line.split('=')[1].strip().split()[0])
-    hfprop_Cp.append(Cp)
-    hfprop_Ct.append(Ct)
-    hfprop_eta.append(eta)
     # run the calculation
     subprocess.run(['python3', 'perform_analysis.py', '--airfoil', 'airfoil-qpropsame.txt'])
     # load the results and append to the list
@@ -73,6 +55,38 @@ for J in uiuc_J:
     hfprop_Cp_smoozedtable.append(Cp)
     hfprop_Ct_smoozedtable.append(Ct)
     hfprop_eta_smoozedtable.append(eta)
+
+    os.chdir('/home/hiroaki/QPROP/myrun')
+    # 実行コマンド
+    command = ['../bin/qprop', 'apc9×4.7SF', 'motor-dummy', f'{V}', '5013']
+    # ファイルに標準出力をリダイレクト
+    with open('out.dat', 'w') as outfile:
+        subprocess.run(command, stdout=outfile)
+   
+    with open('out.dat', 'r') as file:
+        lines = file.readlines()  # Read all lines from the file
+
+        # Check if there are at least 18 lines in the file
+        if len(lines) >= 18:
+            line = lines[17]  # Get the 18th line (index 17)
+
+            # Split the line into columns
+            columns = line.split()
+
+            # Extract the specific values from the 12th, 13th, and 15th indices
+            try:
+                Ct = float(columns[4]) /(rho * rps**2 * (2*R)**4)
+                Cp = float(columns[5]) /(rho * rps**2 * (2*R)**5)
+                eta = float(columns[10])
+            except ValueError:
+                print("Error: Unable to convert data to float.")
+
+    # Append the values to the corresponding lists
+    qprop_Ct.append(Ct)
+    qprop_Cp.append(Cp)
+    qprop_eta.append(eta)
+    os.chdir('/home/hiroaki/HFprop/ANALYSIS/')
+
         
 os.chdir('validation')
 
@@ -120,36 +134,36 @@ plt.rcParams["legend.edgecolor"] = 'black'  # edgeの色を変更
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_Cp, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_Cp, label='BEMT (UTCart raw table)')
-plt.plot(uiuc_J, hfprop_Cp_smoozedtable, label='BEMT (qprop linear fit table)')
+plt.plot(uiuc_J, hfprop_Cp_smoozedtable, label='inhouse')
+plt.plot(uiuc_J, qprop_Cp, label='qprop')
 plt.xlabel('$J$')
 plt.ylabel('$C_P$')
 plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
-plt.savefig('Cp-J-uiuc.png')
+plt.savefig('Cp-J-qprop.png')
 # plt.show()
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_Ct, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_Ct, label='BEMT (UTCart raw table)')
-plt.plot(uiuc_J, hfprop_Ct_smoozedtable, label='BEMT (qprop linear fit table)')
+plt.plot(uiuc_J, hfprop_Ct_smoozedtable, label='inhouse')
+plt.plot(uiuc_J, qprop_Ct, label='qprop')
 plt.xlabel('$J$')
 plt.ylabel('$C_T$')
 plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
-plt.savefig('Ct-J-uiuc.png')
+plt.savefig('Ct-J-qprop.png')
 # plt.show()
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_eta, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_eta, label='BEMT (UTCart raw table)')
-plt.plot(uiuc_J, hfprop_eta_smoozedtable, label='BEMT (qprop linear fit table)')
+plt.plot(uiuc_J, hfprop_eta_smoozedtable, label='inhouse')
+plt.plot(uiuc_J, qprop_eta, label='qprop')
 plt.xlabel('$J$')
 plt.ylabel('$\eta$')
 plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
-plt.savefig('eta-J-uiuc.png')
+plt.savefig('eta-J-qrop.png')
 # plt.show()
