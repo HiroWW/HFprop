@@ -71,7 +71,7 @@ beta = np.interp(r_R, geometry_r_R, geometry_beta)
 
 # load airfoil aerodynamic data and interpolate it to alpha
 alpha = np.linspace(-20, 20, n)
-airfoil = np.loadtxt('airfoil.txt')
+airfoil = np.loadtxt('airfoil-qpropsame.txt')
 airfoil_alpha = airfoil[:, 0]
 airfoil_cl = airfoil[:, 2]
 airfoil_cd = airfoil[:, 1]
