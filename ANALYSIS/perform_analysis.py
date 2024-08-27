@@ -10,12 +10,25 @@ def parse_txt(filename):
     txt_data = {}
     with open(filename, 'r') as file:
         for line in file:
-            # コメント行をスキップ
+            # Skip comment lines
             if line.startswith('#') or not line.strip():
                 continue
-            # キーと値を分割してディクショナリに保存
+            # Split the line into key and value and store them in the dictionary
             key, value = line.split('=')
-            txt_data[key.strip()] = float(value.strip())
+            key = key.strip()
+            value = value.strip()
+            # Handle boolean values
+            if value.lower() == 'true':
+                txt_data[key] = True
+            elif value.lower() == 'false':
+                txt_data[key] = False
+            else:
+                try:
+                    # Attempt to convert to a numeric value
+                    txt_data[key] = float(value)
+                except ValueError:
+                    # If not numeric, store as a string
+                    txt_data[key] = value
     return txt_data
 parser = argparse.ArgumentParser(description='BEMT propeller perform analysis tool')
 parser.add_argument('--condition', type=str, default='condition.txt', help='path to condition file')
@@ -30,6 +43,7 @@ RPM = conditions['RPM']
 rho = conditions['rho']
 B = conditions['B']
 V = conditions['V']
+plotsave = conditions['plotsave']
 
 omega = RPM * 2 * math.pi / 60
 rps = RPM / 60
@@ -218,92 +232,93 @@ qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 
-# plot results
-# plot F
-plt.clf()
-plt.plot(r_R, F, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_F, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('F')
-plt.savefig('./debug/F.png')
-# plot vt
-plt.clf()
-plt.plot(r_R, vt, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_vt, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('vt')
-plt.savefig('./debug/vt.png')
-# plot Wt
-plt.clf()
-plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
-plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi), marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('Wt')
-plt.savefig('./debug/Wt.png')
-# plot c_R
-plt.clf()
-plt.plot(r_R, c_R, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_c_R, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('c_R')
-plt.savefig('./debug/c_R.png')
-# plot beta
-plt.clf()
-plt.plot(r_R, beta, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_beta, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('beta')
-plt.savefig('./debug/beta.png')
-# plot W
-plt.clf()
-plt.plot(r_R, W, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_W, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('W')
-plt.savefig('./debug/W.png')
-# plot psi
-plt.clf()
-plt.plot(r_R, psi, marker='o',label='in-house')
-plt.plot(qprop_r_R, qprop_psi, marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('psi')
-plt.savefig('./debug/psi.png')
-# plot gamma
-plt.clf()
-plt.plot(r_R, gamma, marker='o',label='in-house(wake)')
-plt.plot(r_R, 0.5*W*c_R*R*cl, marker='o',label='in-house(on-blade)')
-plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop(on-blade)')
-plt.plot(qprop_r_R, qprop_gamma, marker='o',label='qprop(wake)')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('gamma')
-plt.savefig('./debug/gamma.png')
-# plot va
-plt.clf()
-plt.plot(r_R, -va/340*F)
-plt.xlabel('r/R')
-plt.ylabel('va')
-plt.savefig('./debug/va.png')
-# plot Wa
-plt.clf()
-plt.plot(r_R, Wa, marker='o', label='in-house')
-plt.plot(qprop_r_R, qprop_Wa,  marker='o',label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('Wa')
-plt.savefig('./debug/Wa.png')
-#plot cl
-plt.clf()
-plt.plot(r_R, cl, marker='o', label='in-house')
-plt.plot(qprop_r_R, qprop_cl, marker='o', label='qprop')
-plt.legend()
-plt.xlabel('r/R')
-plt.ylabel('cl')
-plt.savefig('./debug/cl-r.png')
+if (plotsave):
+    # plot results
+    # plot F
+    plt.clf()
+    plt.plot(r_R, F, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_F, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('F')
+    plt.savefig('./debug/F.png')
+    # plot vt
+    plt.clf()
+    plt.plot(r_R, vt, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_vt, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('vt')
+    plt.savefig('./debug/vt.png')
+    # plot Wt
+    plt.clf()
+    plt.plot(r_R, qprop_Wt, marker='o',label='in-house')
+    plt.plot(qprop_r_R, 0.5*qprop_Ut+0.5*qprop_U*np.cos(qprop_psi), marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('Wt')
+    plt.savefig('./debug/Wt.png')
+    # plot c_R
+    plt.clf()
+    plt.plot(r_R, c_R, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_c_R, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('c_R')
+    plt.savefig('./debug/c_R.png')
+    # plot beta
+    plt.clf()
+    plt.plot(r_R, beta, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_beta, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('beta')
+    plt.savefig('./debug/beta.png')
+    # plot W
+    plt.clf()
+    plt.plot(r_R, W, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_W, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('W')
+    plt.savefig('./debug/W.png')
+    # plot psi
+    plt.clf()
+    plt.plot(r_R, psi, marker='o',label='in-house')
+    plt.plot(qprop_r_R, qprop_psi, marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('psi')
+    plt.savefig('./debug/psi.png')
+    # plot gamma
+    plt.clf()
+    plt.plot(r_R, gamma, marker='o',label='in-house(wake)')
+    plt.plot(r_R, 0.5*W*c_R*R*cl, marker='o',label='in-house(on-blade)')
+    plt.plot(qprop_r_R, 0.5*qprop_W*qprop_c_R*R*qprop_cl, marker='o',label='qprop(on-blade)')
+    plt.plot(qprop_r_R, qprop_gamma, marker='o',label='qprop(wake)')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('gamma')
+    plt.savefig('./debug/gamma.png')
+    # plot va
+    plt.clf()
+    plt.plot(r_R, -va/340*F)
+    plt.xlabel('r/R')
+    plt.ylabel('va')
+    plt.savefig('./debug/va.png')
+    # plot Wa
+    plt.clf()
+    plt.plot(r_R, Wa, marker='o', label='in-house')
+    plt.plot(qprop_r_R, qprop_Wa,  marker='o',label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('Wa')
+    plt.savefig('./debug/Wa.png')
+    #plot cl
+    plt.clf()
+    plt.plot(r_R, cl, marker='o', label='in-house')
+    plt.plot(qprop_r_R, qprop_cl, marker='o', label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('cl')
+    plt.savefig('./debug/cl-r.png')

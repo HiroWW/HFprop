@@ -4,3 +4,4 @@ RPM = 5000
 rho = 1.225
 B = 2
 V = 8.5
+plotsave = True 
