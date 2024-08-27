@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import math
 from scipy.optimize import fsolve
 from scipy.optimize import minimize
-# THIS IS A VERSION COMPLETELY SAME TO QPROP
-# ESPECIALLY FOR THE EQUATION
 
 # general inputs
 # for now, use the same values as in Kawasaki et.al, 2024 to validate the code
