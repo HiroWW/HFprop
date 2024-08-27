@@ -42,12 +42,14 @@ cd HFprop
 To analyze the performance of a propeller with a given geometry, use the `perform_analysis.py` script:
 
 ```bash
-python perform_analysis.py --input geometry_file.txt --output results_file.txt
+python perform_analysis.py --geometry geometry.txt --airfoil airfoil.txt --condition condition.txt
 ```
 
 Options:
-- `--input`: Path to the input file containing the propeller geometry data.
-- `--output`: Path to the output file where the analysis results will be saved.
+<!-- explain about the arguments -->
+- --geometry : path to geometry file
+- --airfoil : path to airfoil cl,cd- alpha table file
+- --condition :  path to condition of calculation file
 
 #### 2. Propeller Design
 
