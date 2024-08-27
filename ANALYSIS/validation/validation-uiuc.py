@@ -18,6 +18,9 @@ R = 0.1143
 hfprop_Cp = []
 hfprop_Ct = []
 hfprop_eta = []
+hfprop_Cp_smoozedtable = []
+hfprop_Ct_smoozedtable = []
+hfprop_eta_smoozedtable = []
 
 os.chdir('..')
 
@@ -51,6 +54,25 @@ for J in uiuc_J:
     hfprop_Cp.append(Cp)
     hfprop_Ct.append(Ct)
     hfprop_eta.append(eta)
+    # run the calculation
+    subprocess.run(['python3', 'perform_analysis.py', '--airfoil', 'airfoil-qpropsame.txt'])
+    # load the results and append to the list
+    with open('results.txt', 'r') as file:
+        for line in file:
+            # Skip lines that don't contain the relevant data
+            if not line.startswith('#'):
+                continue
+
+            # Check and extract the values for Ct, Cp, and eta
+            if 'Ct =' in line:
+                Ct = float(line.split('=')[1].strip().split()[0])
+            elif 'Cp =' in line:
+                Cp = float(line.split('=')[1].strip().split()[0])
+            elif 'eta =' in line:
+                eta = float(line.split('=')[1].strip().split()[0])
+    hfprop_Cp_smoozedtable.append(Cp)
+    hfprop_Ct_smoozedtable.append(Ct)
+    hfprop_eta_smoozedtable.append(eta)
         
 os.chdir('validation')
 
@@ -98,9 +120,11 @@ plt.rcParams["legend.edgecolor"] = 'black'  # edgeの色を変更
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_Cp, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_Cp, label='BEMT')
+plt.plot(uiuc_J, hfprop_Cp, label='BEMT (UTCart raw table)')
+plt.plot(uiuc_J, hfprop_Cp_smoozedtable, label='BEMT (qprop linear fit table)')
 plt.xlabel('$J$')
 plt.ylabel('$C_P$')
+plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
 plt.savefig('Cp-J.png')
@@ -108,9 +132,11 @@ plt.savefig('Cp-J.png')
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_Ct, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_Ct, label='BEMT')
+plt.plot(uiuc_J, hfprop_Ct, label='BEMT (UTCart raw table)')
+plt.plot(uiuc_J, hfprop_Ct_smoozedtable, label='BEMT (qprop linear fit table)')
 plt.xlabel('$J$')
 plt.ylabel('$C_T$')
+plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
 plt.savefig('Ct-J.png')
@@ -118,9 +144,11 @@ plt.savefig('Ct-J.png')
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 plt.plot(uiuc_J, uiuc_eta, marker='s', linestyle='None', label='UIUC WT')
-plt.plot(uiuc_J, hfprop_eta, label='BEMT')
+plt.plot(uiuc_J, hfprop_eta, label='BEMT (UTCart raw table)')
+plt.plot(uiuc_J, hfprop_eta_smoozedtable, label='BEMT (qprop linear fit table)')
 plt.xlabel('$J$')
 plt.ylabel('$\eta$')
+plt.xlim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
 plt.savefig('eta-J.png')
