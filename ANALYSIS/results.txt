@@ -12,8 +12,17 @@
 # RADIUS = 0.1143 [m]
 # RPM = 5000
 # V = 8.5 [m/s]
+# J = 0.44619422572178485
 # 
-# ==== VARIABLES DESCRIPTION
+# ==== BASIC RESULTS
+# Thrust = 1.1538407845967409 [N]
+# Torque = 0.030458214053126875 [Nm]
+# Ct = 0.04966693785167269 [UIUC definition]
+# Cq = 0.005735215057118644 [UIUC definition]
+# Cp = 0.036035418980402995 [UIUC definition]
+# eta = 0.6149810798856229 [UIUC definition]
+# 
+# ==== BLADE ELEMENT RESULTS
 # r: radial position [m]
 # cl: lift coefficient [-]
 # aoa: angle of attack [deg]
@@ -26,8 +35,6 @@
 # va: induced axial velocity [m/s]
 # vt: induced tangential velocity [m/s]
 # gamma: circulation [-]
-# 
-# ==== RESULTS
 # r              cl                aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
 # 
 0.01908810000000 -0.37772678839393 -12.84221158139537 8.15404871240122 10.26920131397744 0.63741427006622 9.99450578849789 13.12021897516645 13.11278025558302 -0.34595128759878 -0.27469552547956 -0.03687139527124

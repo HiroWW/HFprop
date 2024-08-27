@@ -11,9 +11,12 @@ from scipy.optimize import minimize
 R = 0.1143
 RPM = 5000
 rho = 1.225
-omega = RPM * 2 * math.pi / 60
 B = 2
 V = 8.5
+
+omega = RPM * 2 * math.pi / 60
+rps = RPM / 60
+J = V / (rps * 2 * R)
 CL0 = math.radians(-6)  # example
 DCLDA = 2 * math.pi  # example
 
@@ -56,8 +59,8 @@ plt.savefig('./debug/cd-alpha.png')
 
 plt.clf()
 
+# solve for psi by newton method
 psi = np.zeros(len(r_R))
-
 qpropFactorFlag = True
 for i in range(len(r_R)):
     def equation(psi):
@@ -101,6 +104,7 @@ plt.savefig('./debug/psi.png')
 
 # post process
 r = r_R * R
+c = c_R * R
 Ua = V
 Ut = omega * r
 U = np.sqrt(Ua**2 + Ut**2)
@@ -109,8 +113,19 @@ Wt = 1/2 * Ut + 1/2 * U * np.cos(psi)
 W = np.sqrt(Wa**2 + Wt**2)
 va = Wa - Ua
 vt = Ut - Wt
-aoa = beta - np.degrees(np.arctan(Wa / Wt))
+phi = np.arctan(Wa / Wt)
+aoa = beta - np.degrees(phi)
 cl = np.interp(aoa, alpha, airfoil_cl)
+cd = np.interp(aoa, alpha, airfoil_cd)
+dL = 1/2 * rho * W**2 * c * cl * B
+dD = 1/2 * rho * W**2 * c * cd * B
+dT = dL * np.cos(phi) - dD * np.sin(phi)
+dQ = (dL * np.sin(phi) + dD * np.cos(phi)) * r
+T = np.trapz(dT, r)
+Q = np.trapz(dQ, r)
+Ct = T / (rho * rps**2 * (2*R)**4)
+Cq = Q / (rho * rps**2 * (2*R)**5)
+Cp = Cq * 2 * math.pi
 if qpropFactorFlag:
     lamda = r / R * Wa / Wt
     f = B / 2 * (1 - r/R) / lamda
@@ -137,8 +152,17 @@ Hiroaki Fujiwara, 2024
 RADIUS = {R} [m]
 RPM = {RPM}
 V = {V} [m/s]
+J = {J}
 
-==== VARIABLES DESCRIPTION
+==== BASIC RESULTS
+Thrust = {T} [N]
+Torque = {Q} [Nm]
+Ct = {Ct} [UIUC definition]
+Cq = {Cq} [UIUC definition]
+Cp = {Cp} [UIUC definition]
+eta = {Ct * J / Cp} [UIUC definition]
+
+==== BLADE ELEMENT RESULTS
 r: radial position [m]
 cl: lift coefficient [-]
 aoa: angle of attack [deg]
@@ -151,14 +175,13 @@ W: resultant velocity [m/s]
 va: induced axial velocity [m/s]
 vt: induced tangential velocity [m/s]
 gamma: circulation [-]
-
-==== RESULTS
 r              cl                aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
 '''
 
 # Save the results to 'results.txt' with the specified format
 np.savetxt('results.txt', np.array([r, cl, aoa, Wa, Wt, psi, Ut, U, W, va, vt, gamma]).T,
            header=header, fmt='%.14f')
+
 # load qprop data for validation
 qprop = np.loadtxt('../secret/qprop_validation_advance.txt')
 qprop_r_R = qprop[:, 0] / R
@@ -178,6 +201,7 @@ qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 
+# plot results
 # plot F
 plt.clf()
 plt.plot(r_R, F, marker='o',label='in-house')
