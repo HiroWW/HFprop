@@ -1,16 +1,35 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import argparse
 from scipy.optimize import fsolve
 from scipy.optimize import minimize
 
+# parse arguments
+def parse_txt(filename):
+    txt_data = {}
+    with open(filename, 'r') as file:
+        for line in file:
+            # コメント行をスキップ
+            if line.startswith('#') or not line.strip():
+                continue
+            # キーと値を分割してディクショナリに保存
+            key, value = line.split('=')
+            txt_data[key.strip()] = float(value.strip())
+    return txt_data
+parser = argparse.ArgumentParser(description='BEMT propeller perform analysis tool')
+parser.add_argument('--condition', type=str, default='condition.txt', help='path to condition file')
+parser.add_argument('--geometry', type=str, default='geometry.txt', help='path to geometry file')
+parser.add_argument('--airfoil', type=str, default='airfoil.txt', help='path to airfoil file')
+args = parser.parse_args()
+
 # general inputs
-# for now, use the same values as in Kawasaki et.al, 2024 to validate the code
-R = 0.1143
-RPM = 5000
-rho = 1.225
-B = 2
-V = 8.5
+conditions = parse_txt(args.condition)
+R = conditions['R']
+RPM = conditions['RPM']
+rho = conditions['rho']
+B = conditions['B']
+V = conditions['V']
 
 omega = RPM * 2 * math.pi / 60
 rps = RPM / 60
@@ -22,9 +41,9 @@ DCLDA = 2 * math.pi  # example
 n = 25
 start = 0.15
 end = 1.0
-# 区間の端点を取得
+# get the end points of the intervals
 edges = np.linspace(start, end, n+1)
-# 各区間の中心を計算
+# calculate the center of each interval
 r_R = (edges[:-1] + edges[1:]) / 2
 r = r_R * R
 
