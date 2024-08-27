@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
 import os 
+from cycler import cycler
+import colorsys
 
 # load uiuc data
 uiuc_data = np.loadtxt('uiuc_apc9by4.7SF_rpm5013.txt', skiprows=2)
@@ -53,26 +55,73 @@ for J in uiuc_J:
 os.chdir('validation')
 
 # plot the results
-plt.plot(uiuc_J, uiuc_Cp, label='UIUC')
-plt.plot(uiuc_J, hfprop_Cp, 'o', label='HFPROP')
-plt.xlabel('J')
-plt.ylabel('Cp')
+# =========================================
+# ========= Plotting Congifuration ========
+# =========================================
+# アスペクト比を大和比に設定
+# 参考：https://qiita.com/ShotaDeguchi/items/c24a89272e651c3de58c
+# Font settings
+# 参考：https://qiita.com/yuki_2020/items/7f96c79614c2576a37d3
+# 参考；https://qiita.com/nabenabe0928/items/a026555917525e2bd761(timesのinstall)
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'Times New Roman' 
+plt.rcParams['mathtext.fontset'] = 'stix'
+plt.rcParams["font.size"] = 15 
+# 色をはっきりしたものに変更
+# 参考：https://maskit.hatenablog.com/entry/2022/05/29/124006
+clist = []
+for i in range(8):
+    c = colorsys.rgb_to_hsv( *plt.get_cmap('Set1')(i)[:3] )
+    c = colorsys.hsv_to_rgb( c[0] , 1.-(1.-c[1])*.2 , c[2]*.85 )
+    clist.append( c )
+plt.rcParams['axes.prop_cycle'] = cycler( color=clist )
+# 軸、グリッド、目盛りの設定
+# 参考：https://qiita.com/yuki_2020/items/7f96c79614c2576a37d3
+plt.rcParams['xtick.direction'] = 'in' #x軸の目盛りの向き
+plt.rcParams['ytick.direction'] = 'in' #y軸の目盛りの向き
+plt.rcParams['axes.grid'] = True # グリッドの作成
+plt.rcParams['grid.linestyle']='-' #グリッドの線種
+plt.rcParams["xtick.minor.visible"] = True  #x軸補助目盛りの追加
+plt.rcParams["ytick.minor.visible"] = True  #y軸補助目盛りの追加
+plt.rcParams['xtick.top'] = True  #x軸の上部目盛り
+plt.rcParams['ytick.right'] = True  #y軸の右部目盛り
+plt.rcParams['axes.linewidth'] = 1.0 # 軸の太さ
+# markerの設定
+# 参考：https://www.useful-python.com/matplotlib-thesis-format/
+plt.rcParams['lines.markerfacecolor'] = 'white' #中を白塗り
+plt.rcParams['lines.markersize'] = 6 #マーカーサイズ
+# 凡例の設定
+plt.rcParams["legend.fancybox"] = False  # 丸角OFF
+plt.rcParams["legend.framealpha"] = 1  # 透明度の指定、0で塗りつぶしなし
+plt.rcParams["legend.edgecolor"] = 'black'  # edgeの色を変更
+# plt.rcParams["legend.markerscale"] = 3 #markerサイズの倍率
+
+plt.figure(dpi=300, figsize=(1.414*4, 4))
+plt.plot(uiuc_J, uiuc_Cp, marker='s', linestyle='None', label='UIUC WT')
+plt.plot(uiuc_J, hfprop_Cp, label='BEMT')
+plt.xlabel('$J$')
+plt.ylabel('$C_P$')
 plt.legend()
+plt.tight_layout() # 余白を小さくする
 plt.savefig('Cp-J.png')
-plt.show()
-plt.clf()
-plt.plot(uiuc_J, uiuc_Ct, label='UIUC')
-plt.plot(uiuc_J, hfprop_Ct, 'o', label='HFPROP')
-plt.xlabel('J')
-plt.ylabel('Ct')
+# plt.show()
+
+plt.figure(dpi=300, figsize=(1.414*4, 4))
+plt.plot(uiuc_J, uiuc_Ct, marker='s', linestyle='None', label='UIUC WT')
+plt.plot(uiuc_J, hfprop_Ct, label='BEMT')
+plt.xlabel('$J$')
+plt.ylabel('$C_T$')
 plt.legend()
+plt.tight_layout() # 余白を小さくする
 plt.savefig('Ct-J.png')
-plt.show()
-plt.clf()
-plt.plot(uiuc_J, uiuc_eta, label='UIUC')
-plt.plot(uiuc_J, hfprop_eta, 'o', label='HFPROP')
-plt.xlabel('J')
-plt.ylabel('eta')
+# plt.show()
+
+plt.figure(dpi=300, figsize=(1.414*4, 4))
+plt.plot(uiuc_J, uiuc_eta, marker='s', linestyle='None', label='UIUC WT')
+plt.plot(uiuc_J, hfprop_eta, label='BEMT')
+plt.xlabel('$J$')
+plt.ylabel('$\eta$')
 plt.legend()
+plt.tight_layout() # 余白を小さくする
 plt.savefig('eta-J.png')
-plt.show()
+# plt.show()
