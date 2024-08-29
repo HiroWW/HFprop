@@ -85,18 +85,6 @@ airfoil_cd = airfoil[:, 1]
 airfoil_cl = cl0 + cla*np.radians(alpha)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
-plt.plot(alpha, airfoil_cl)
-plt.xlabel('alpha')
-plt.ylabel('cl')
-plt.savefig('./debug/cl-alpha.png')
-plt.clf()
-plt.plot(alpha, airfoil_cd)
-plt.xlabel('alpha')
-plt.ylabel('cd')
-plt.savefig('./debug/cd-alpha.png')
-
-plt.clf()
-
 # solve for psi by newton method
 psi = np.zeros(len(r_R))
 qpropFactorFlag = True
@@ -175,6 +163,8 @@ dL = 1/2 * rho * W**2 * c * cl * B
 dD = 1/2 * rho * W**2 * c * cd * B
 dT = dL * np.cos(phi) - dD * np.sin(phi)
 dQ = (dL * np.sin(phi) + dD * np.cos(phi)) * r
+dT = 0.5 * rho * c * W * (cl * Wt - cd * Wa) * B
+dQ = 0.5 * rho * c * W * (cl * Wa + cd * Wt) * B * r
 T = np.trapz(dT, r)
 Q = np.trapz(dQ, r)
 Ct = T / (rho * rps**2 * (2*R)**4)
@@ -254,6 +244,17 @@ qprop_r = qprop_r_R * R
 qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
+
+plt.clf()
+plt.plot(alpha, airfoil_cl)
+plt.xlabel('alpha')
+plt.ylabel('cl')
+plt.savefig('./debug/cl-alpha.png')
+plt.clf()
+plt.plot(alpha, airfoil_cd)
+plt.xlabel('alpha')
+plt.ylabel('cd')
+plt.savefig('./debug/cd-alpha.png')
 
 if (plotsave):
     # plot results
