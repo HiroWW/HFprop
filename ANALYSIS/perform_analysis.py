@@ -72,7 +72,7 @@ geometry_beta = geometry[:, 2]
 beta = np.interp(r_R, geometry_r_R, geometry_beta)
 
 # load airfoil aerodynamic data and interpolate it to alpha
-alpha = np.linspace(-20, 20, n)
+alpha = np.linspace(-20, 20, 1000)
 airfoil = np.loadtxt(args.airfoil)
 airfoil_alpha = airfoil[:, 0]
 airfoil_cl = airfoil[:, 2]
@@ -82,7 +82,7 @@ cl_min = -0.25232311
 cl_max = 1.4911173
 airfoil_cd = airfoil[:, 1]
 # airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
-airfoil_cl = cl0 + cla*alpha
+airfoil_cl = cl0 + cla*np.radians(alpha)
 airfoil_cl = np.clip(airfoil_cl, cl_min, cl_max)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
