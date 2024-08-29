@@ -6,17 +6,32 @@ from scipy.optimize import fsolve
 
 PI = math.pi
 
+# temporary values for validation
+cl0 = 0.58453281
+cla = 5.792954320080275
+dclda = cla
+cl_min = -0.25232311
+cl_max = 1.4911173
+cd0 = 0.020439062369484066
+cd2u = 0.08436756949113908 
+cd2l = 0.06754529977189071
+clcd0 = 0.8051186313378577
+ReynoldsEff = 70262
+REexp = -0.5
+
+
 class HFprop:
     def main(self):
         self.initialize()
-        self.solve_psi()
+        self.calculate_circulation()
         self.calculate_thrust()
         self.finalize()
 
     def initialize(self):
         args = self.parse_args()
         self.set_condition(args.condition)
-        self.load_airfoil(args.airfoil)
+        # self.load_airfoil(args.airfoil)
+        self.set_qpropairfoil()
         self.load_geometry(args.geometry)
 
     def parse_args(self):
@@ -86,6 +101,12 @@ class HFprop:
         self.cl_alpha = np.interp(self.alpha, airfoil_alpha, airfoil_cl)
         self.cd_alpha = np.interp(self.alpha, airfoil_alpha, airfoil_cd)
 
+    def set_qpropairfoil(self):
+        self.alpha = np.linspace(-20, 20, 1000)
+        self.cl_alpha = np.zeros(1000)
+        self.cd_alpha = np.zeros(1000)
+        self.cl_alpha = (dclda * self.alpha + cl0)
+
     def load_geometry(self, filename):
         # load gemoetry txt and interpolate it to r/R
         geometry = np.loadtxt(filename)
@@ -96,17 +117,18 @@ class HFprop:
         self.c = self.c_R * self.R
         self.beta = np.interp(self.r_R, geometry_r_R, geometry_beta)
     
-    def solve_psi(self):
+    def calculate_circulation(self):
         self.update()
         for i in range(len(self.r_R)):
             def equation(psi):
                 self.psi[i] = psi
-                self.update()
+                # self.update()
+                self.update_qprop(i)
                 return self.gamma[i] - 0.5 *self.W[i] * self.c[i] * self.cl[i]
             
             ans = fsolve(equation, np.arctan2(self.Ua, self.Ut[i]))
             self.psi[i] = ans
-        self.update()
+            self.update_qprop(i)
     
     def update(self):
         self.Ut = self.OMEGA * self.r
@@ -125,6 +147,43 @@ class HFprop:
         self.F = 2 / PI * np.arccos(np.clip(np.exp(-self.f), -1, 1))
         rootFactor = np.sqrt(1 + (4 * self.lamda * self.R / (PI * self.B * self.r))**2)
         self.gamma = self.vt * 4 * PI * self.r / self.B * self.F * rootFactor
+
+    def update_qprop(self, i):
+        self.Ut = self.OMEGA * self.r
+        self.U = np.sqrt(self.Ua**2 + self.Ut**2)
+        self.Wa = 0.5 * self.Ua + 0.5 * self.U * np.sin(self.psi)
+        self.Wt = 0.5 * self.Ut + 0.5 * self.U * np.cos(self.psi)
+        self.phi = np.arctan2(self.Wa, self.Wt)
+        self.va = self.Wa - self.Ua
+        self.vt = self.Ut - self.Wt
+        self.aoa = self.beta - np.degrees(np.arctan(self.Wa / self.Wt))
+        self.W = np.sqrt(self.Wa**2 + self.Wt**2)
+        self.cl = np.interp(self.aoa, self.alpha, self.cl_alpha) / np.sqrt(1-(self.W/340)**2)
+        # ここから違う
+        stall = False
+        if (self.cl[i] < cl_min):
+            self.cl[i] = cl_min * np.cos(np.radians(self.aoa[i]) - (cl0/cla))
+            stall = True
+        elif (self.cl[i] > cl_max):
+            self.cl[i] = cl_max * np.cos(np.radians(self.aoa[i]) - (cl0/cla))
+            stall = True
+        Reynolds = self.RHO * self.W[i] * self.c[i] / (1.78 * 10**-5) 
+        if (self.cl[i] >= clcd0):
+            cd2 = cd2u
+        if (self.cl[i] < clcd0) :
+            cd2 = cd2l
+        self.cd[i] = (cd0 + cd2*(self.cl[i]-clcd0)**2) * (Reynolds/ReynoldsEff)**REexp
+        if (stall):
+            acd0 = (clcd0-cl0)/dclda
+            dcd = 2.0*math.sin(self.aoa[i]-acd0)**2
+            self.cd[i] = self.cd[i] + dcd
+        # ここまで違う
+        self.lamda = self.r / self.R * self.Wa / self.Wt
+        self.f = self.B / 2 * (1 - self.r_R) / self.lamda
+        self.F = 2 / PI * np.arccos(np.clip(np.exp(-self.f), -1, 1))
+        rootFactor = np.sqrt(1 + (4 * self.lamda * self.R / (PI * self.B * self.r))**2)
+        self.gamma = self.vt * 4 * PI * self.r / self.B * self.F * rootFactor
+
 
     def calculate_thrust(self):
         dL = 1/2 * self.RHO * self.W**2 * self.c * self.cl * self.B
@@ -199,6 +258,13 @@ r              cl                aoa                Wa              Wt          
         plt.plot(self.r_R, self.cl)
         plt.xlabel('r/R')
         plt.ylabel('Cl')
+        plt.grid()
+        plt.show()
+        # plot cd
+        plt.clf()
+        plt.plot(self.r_R, self.cd)
+        plt.xlabel('r/R')
+        plt.ylabel('Cd')
         plt.grid()
         plt.show()
         # plot aoa
