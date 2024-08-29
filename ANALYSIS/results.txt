@@ -15,12 +15,12 @@
 # J = 0.6443044619422573
 # 
 # ==== BASIC RESULTS
-# Thrust = 0.2206162708470582 [N]
-# Torque = 0.023485257250577825 [Nm]
-# Ct = 0.009447211491962341 [UIUC definition]
-# Cq = 0.004399316365042301 [UIUC definition]
-# Cp = 0.027641719946468492 [UIUC definition]
-# eta = 0.22020628705346415 [UIUC definition]
+# Thrust = 0.21636461619802566 [N]
+# Torque = 0.024243187507989997 [Nm]
+# Ct = 0.009265147492303675 [UIUC definition]
+# Cq = 0.004541293731924755 [UIUC definition]
+# Cp = 0.028533790052016374 [UIUC definition]
+# eta = 0.2092107588568497 [UIUC definition]
 # 
 # ==== BLADE ELEMENT RESULTS
 # r: radial position [m]

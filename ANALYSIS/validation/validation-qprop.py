@@ -178,7 +178,7 @@ plt.plot(uiuc_J, error, marker='s', label='qprop/inhouse')
 plt.xlabel('$J$')
 plt.ylabel('$Cp error$[\%]')
 plt.xlim(0, None)
-plt.ylim(0, 5)
+plt.ylim(0, None)
 plt.legend()
 plt.tight_layout() # 余白を小さくする
 plt.savefig('cperror-J-qrop.png')

@@ -197,8 +197,13 @@ class HFprop:
         dQ = (dL * np.sin(self.phi) + dD * np.cos(self.phi)) * self.r
         dT = 0.5 * self.RHO * self.c * self.W * (self.cl * self.Wt - self.cd * self.Wa) * self.B
         dQ = 0.5 * self.RHO * self.c * self.W * (self.cl * self.Wa + self.cd * self.Wt) * self.B * self.r
-        self.T = np.trapz(dT, self.r)
-        self.Q = np.trapz(dQ, self.r)
+        # self.T = np.trapz(dT, self.r)
+        # self.Q = np.trapz(dQ, self.r)
+        self.T = 0
+        self.Q = 0
+        for i in range(len(self.r)):
+            self.T += dT[i] * (self.r[1]-self.r[0])
+            self.Q += dQ[i] * (self.r[1]-self.r[0])
         self.Ct = self.T / (self.RHO * self.RPS**2 * (2*self.R)**4)
         self.Cq = self.Q / (self.RHO * self.RPS**2 * (2*self.R)**5)
         self.Cp = self.Cq * 2 * PI
