@@ -4,4 +4,4 @@ RPM = 5013
 rho = 1.225
 B = 2
 V = 12.3059124
-plotsave = True
+plotsave = False

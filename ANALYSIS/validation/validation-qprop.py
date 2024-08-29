@@ -174,7 +174,7 @@ plt.savefig('eta-J-qrop.png')
 
 plt.figure(dpi=300, figsize=(1.414*4, 4))
 error = (np.array(qprop_Cp) / np.array(hfprop_Cp_smoozedtable) -1 ) * 100
-plt.plot(uiuc_J, error, marker='s')
+plt.plot(uiuc_J, error, marker='s', label='qprop/inhouse')
 plt.xlabel('$J$')
 plt.ylabel('$Cp error$[\%]')
 plt.xlim(0, None)

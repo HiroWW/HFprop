@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import math
 import argparse
 from scipy.optimize import fsolve
+from scipy.optimize import root_scalar
 
 PI = math.pi
 
@@ -126,7 +127,8 @@ class HFprop:
                 self.update_qprop(i)
                 return self.gamma[i] - 0.5 *self.W[i] * self.c[i] * self.cl[i]
             
-            ans = fsolve(equation, np.arctan2(self.Ua, self.Ut[i]))
+            # ans = fsolve(equation, np.arctan2(self.Ua, self.Ut[i]))
+            ans = root_scalar(equation, bracket=(0, 90), method='brentq').root
             self.psi[i] = ans
             self.update_qprop(i)
         # self.update()
