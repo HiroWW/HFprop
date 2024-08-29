@@ -83,7 +83,6 @@ cl_max = 1.4911173
 airfoil_cd = airfoil[:, 1]
 # airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
 airfoil_cl = cl0 + cla*np.radians(alpha)
-airfoil_cl = np.clip(airfoil_cl, cl_min, cl_max)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
 plt.plot(alpha, airfoil_cl)
@@ -114,6 +113,11 @@ for i in range(len(r_R)):
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
         cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
+        if (cl < cl_min):
+            cl = cl_min * np.cos(np.radians(aoa) - (cl0/cla))
+        elif (cl > cl_max):
+            cl = cl_max * np.cos(np.radians(aoa) - (cl0/cla))
+
         # --- qprop modify ---
         if (qpropFactorFlag):
             lamda = r / R * Wa / Wt
@@ -155,6 +159,8 @@ vt = Ut - Wt
 phi = np.arctan(Wa / Wt)
 aoa = beta - np.degrees(phi)
 cl = np.interp(aoa, alpha, airfoil_cl)
+cl = np.where(cl < cl_min, cl_min * np.cos(np.radians(aoa) - (cl0/cla)), cl)
+cl = np.where(cl > cl_max, cl_max * np.cos(np.radians(aoa) - (cl0/cla)), cl)
 cd = np.interp(aoa, alpha, airfoil_cd)
 Reynolds = rho * W * c / (1.78 * 10**-5) 
 cd = cd * (Reynolds/ReynoldsEff)**REexp
