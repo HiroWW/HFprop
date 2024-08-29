@@ -129,6 +129,7 @@ class HFprop:
             ans = fsolve(equation, np.arctan2(self.Ua, self.Ut[i]))
             self.psi[i] = ans
             self.update_qprop(i)
+        # self.update()
     
     def update(self):
         self.Ut = self.OMEGA * self.r
@@ -192,6 +193,8 @@ class HFprop:
         dD = 1/2 * self.RHO * self.W**2 * self.c * self.cd * self.B
         dT = dL * np.cos(self.phi) - dD * np.sin(self.phi)
         dQ = (dL * np.sin(self.phi) + dD * np.cos(self.phi)) * self.r
+        dT = 0.5 * self.RHO * self.c * self.W * (self.cl * self.Wt - self.cd * self.Wa) * self.B
+        dQ = 0.5 * self.RHO * self.c * self.W * (self.cl * self.Wa + self.cd * self.Wt) * self.B * self.r
         self.T = np.trapz(dT, self.r)
         self.Q = np.trapz(dQ, self.r)
         self.Ct = self.T / (self.RHO * self.RPS**2 * (2*self.R)**4)
