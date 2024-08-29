@@ -150,8 +150,15 @@ phi = np.arctan(Wa / Wt)
 aoa = beta - np.degrees(phi)
 cl = np.interp(aoa, alpha, airfoil_cl)
 cd = np.interp(aoa, alpha, airfoil_cd)
-Reynolds = rho * W * c / (1.7894 * 10**-5) 
+Reynolds = rho * W * c / (1.78 * 10**-5) 
 cd = cd * (Reynolds/ReynoldsEff)**REexp
+# qprop way to calculate Cd
+cd0 = 0.020439062369484066
+cd2u = 0.08436756949113908 
+cd2l = 0.06754529977189071
+clcd0 = 0.8051186313378577
+cd2 = np.where(cl > clcd0, cd2u, cd2l)
+cd = (cd0 + cd2*(cl-clcd0)**2) * (Reynolds/ReynoldsEff)**REexp
 dL = 1/2 * rho * W**2 * c * cl * B
 dD = 1/2 * rho * W**2 * c * cd * B
 dT = dL * np.cos(phi) - dD * np.sin(phi)
