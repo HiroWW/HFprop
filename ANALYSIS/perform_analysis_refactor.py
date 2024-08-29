@@ -158,11 +158,13 @@ class HFprop:
         self.vt = self.Ut - self.Wt
         self.aoa = self.beta - np.degrees(np.arctan(self.Wa / self.Wt))
         self.W = np.sqrt(self.Wa**2 + self.Wt**2)
-        self.cl = np.interp(self.aoa, self.alpha, self.cl_alpha) / np.sqrt(1-(self.W/340)**2)
+        self.cl[i] = np.interp(self.aoa[i], self.alpha, self.cl_alpha) / np.sqrt(1-(self.W[i]/340)**2)
         # ここから違う
         stall = False
         if (self.cl[i] < cl_min):
+            # print('stall :', self.cl[i])
             self.cl[i] = cl_min * np.cos(np.radians(self.aoa[i]) - (cl0/cla))
+            # print('====>>', self.cl[i]) 
             stall = True
         elif (self.cl[i] > cl_max):
             self.cl[i] = cl_max * np.cos(np.radians(self.aoa[i]) - (cl0/cla))
