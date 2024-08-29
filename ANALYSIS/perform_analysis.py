@@ -76,8 +76,14 @@ alpha = np.linspace(-20, 20, n)
 airfoil = np.loadtxt(args.airfoil)
 airfoil_alpha = airfoil[:, 0]
 airfoil_cl = airfoil[:, 2]
+cl0 = 0.58453281
+cla = 5.792954320080275
+cl_min = -0.25232311
+cl_max = 1.4911173
 airfoil_cd = airfoil[:, 1]
-airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
+# airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
+airfoil_cl = cl0 + cla*alpha
+airfoil_cl = np.clip(airfoil_cl, cl_min, cl_max)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
 
 plt.plot(alpha, airfoil_cl)
