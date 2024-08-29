@@ -50,8 +50,6 @@ rps = RPM / 60
 J = V / (rps * 2 * R)
 CL0 = math.radians(-6)  # example
 DCLDA = 2 * math.pi  # example
-ReynoldsEff = 70262  # example
-REexp = -0.5  # example
 
 # arrays for r/R
 n = 25
@@ -72,18 +70,25 @@ geometry_beta = geometry[:, 2]
 beta = np.interp(r_R, geometry_r_R, geometry_beta)
 
 # load airfoil aerodynamic data and interpolate it to alpha
-alpha = np.linspace(-20, 20, 1000)
+alpha = np.linspace(-20, 20, n)
 airfoil = np.loadtxt(args.airfoil)
 airfoil_alpha = airfoil[:, 0]
 airfoil_cl = airfoil[:, 2]
-cl0 = 0.58453281
-cla = 5.792954320080275
-cl_min = -0.25232311
-cl_max = 1.4911173
 airfoil_cd = airfoil[:, 1]
 airfoil_cl = np.interp(alpha, airfoil_alpha, airfoil_cl)
-# airfoil_cl = cl0 + cla*np.radians(alpha)
 airfoil_cd = np.interp(alpha, airfoil_alpha, airfoil_cd)
+
+plt.plot(alpha, airfoil_cl)
+plt.xlabel('alpha')
+plt.ylabel('cl')
+plt.savefig('./debug/cl-alpha.png')
+plt.clf()
+plt.plot(alpha, airfoil_cd)
+plt.xlabel('alpha')
+plt.ylabel('cd')
+plt.savefig('./debug/cd-alpha.png')
+
+plt.clf()
 
 # solve for psi by newton method
 psi = np.zeros(len(r_R))
@@ -100,12 +105,7 @@ for i in range(len(r_R)):
         vt = Ut - Wt
         aoa = beta[i] - np.degrees(np.arctan(Wa / Wt))
         W = np.sqrt(Wa**2 + Wt**2)
-        cl = np.interp(aoa, alpha, airfoil_cl) #* 1 / np.sqrt(1-(W/340)**2)
-        # if (cl < cl_min):
-            # cl = cl_min * np.cos(np.radians(aoa) - (cl0/cla))
-        # elif (cl > cl_max):
-            # cl = cl_max * np.cos(np.radians(aoa) - (cl0/cla))
-
+        cl = np.interp(aoa, alpha, airfoil_cl) * 1 / np.sqrt(1-(W/340)**2)
         # --- qprop modify ---
         if (qpropFactorFlag):
             lamda = r / R * Wa / Wt
@@ -120,13 +120,11 @@ for i in range(len(r_R)):
             F = 2 / math.pi * np.arccos(np.clip(np.exp(-f), -1, 1))
             gamma = vt * 4 * math.pi * r / B * F
         c = c_R[i] * R
-        print(cl)
         return gamma - 1/2 * W * c * cl
     # initial guess for psi (from QPROP, Drela, 2007)
     Ua = V
     Ut = omega * r[i]
-    # initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i])+ CL0 / DCLDA)
-    initial_guess = np.arctan2(Ua, Ut)
+    initial_guess = np.maximum(np.arctan2(Ua, Ut), math.radians(beta[i])+ CL0 / DCLDA)
     psi[i] = fsolve(equation, initial_guess)[0]
 
 # plot psi
@@ -149,27 +147,11 @@ vt = Ut - Wt
 phi = np.arctan(Wa / Wt)
 aoa = beta - np.degrees(phi)
 cl = np.interp(aoa, alpha, airfoil_cl)
-cl = np.where(cl < cl_min, cl_min * np.cos(np.radians(aoa) - (cl0/cla)), cl)
-cl = np.where(cl > cl_max, cl_max * np.cos(np.radians(aoa) - (cl0/cla)), cl)
 cd = np.interp(aoa, alpha, airfoil_cd)
-Reynolds = rho * W * c / (1.78 * 10**-5) 
-cd = cd * (Reynolds/ReynoldsEff)**REexp
-# qprop way to calculate Cd
-cd0 = 0.020439062369484066
-cd2u = 0.08436756949113908 
-cd2l = 0.06754529977189071
-clcd0 = 0.8051186313378577
-cd2 = np.where(cl > clcd0, cd2u, cd2l)
-cd = (cd0 + cd2*(cl-clcd0)**2) * (Reynolds/ReynoldsEff)**REexp
-ACD0 = (CLCD0-CL0)/DCLDA
-DCD = 2.0*SIN(A-ACD0)**2
-cd = cd + dcd
 dL = 1/2 * rho * W**2 * c * cl * B
 dD = 1/2 * rho * W**2 * c * cd * B
 dT = dL * np.cos(phi) - dD * np.sin(phi)
 dQ = (dL * np.sin(phi) + dD * np.cos(phi)) * r
-dT = 0.5 * rho * c * W * (cl * Wt - cd * Wa) * B
-dQ = 0.5 * rho * c * W * (cl * Wa + cd * Wt) * B * r
 T = np.trapz(dT, r)
 Q = np.trapz(dQ, r)
 Ct = T / (rho * rps**2 * (2*R)**4)
@@ -232,7 +214,7 @@ np.savetxt('results.txt', np.array([r, cl, aoa, Wa, Wt, psi, Ut, U, W, va, vt, g
            header=header, fmt='%.14f')
 
 # load qprop data for validation
-qprop = np.loadtxt('../secret/qprop_validation_advanceV12.txt')
+qprop = np.loadtxt('../secret/qprop_validation_advance.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_beta = qprop[:, 2]
@@ -250,23 +232,7 @@ qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 
-
-
 if (plotsave):
-    # plot input
-    # plot cl-a
-    plt.clf()
-    plt.plot(alpha, airfoil_cl)
-    plt.xlabel('alpha')
-    plt.ylabel('cl')
-    plt.savefig('./debug/cl-alpha.png')
-    # plot cd-a
-    plt.clf()
-    plt.plot(alpha, airfoil_cd)
-    plt.xlabel('alpha')
-    plt.ylabel('cd')
-    plt.savefig('./debug/cd-alpha.png')
-    
     # plot results
     # plot F
     plt.clf()
@@ -356,11 +322,3 @@ if (plotsave):
     plt.xlabel('r/R')
     plt.ylabel('cl')
     plt.savefig('./debug/cl-r.png')
-    #plot cd
-    plt.clf()
-    plt.plot(r_R, cd, marker='o', label='in-house')
-    plt.plot(qprop_r_R, qprop[:, 4], marker='o', label='qprop')
-    plt.legend()
-    plt.xlabel('r/R')
-    plt.ylabel('cd')
-    plt.savefig('./debug/cd-r.png')
