@@ -50,6 +50,8 @@ rps = RPM / 60
 J = V / (rps * 2 * R)
 CL0 = math.radians(-6)  # example
 DCLDA = 2 * math.pi  # example
+ReynoldsEff = 70262  # example
+REexp = -0.5  # example
 
 # arrays for r/R
 n = 25
@@ -148,6 +150,8 @@ phi = np.arctan(Wa / Wt)
 aoa = beta - np.degrees(phi)
 cl = np.interp(aoa, alpha, airfoil_cl)
 cd = np.interp(aoa, alpha, airfoil_cd)
+Reynolds = rho * W * c / (1.7894 * 10**-5) 
+cd = cd * (Reynolds/ReynoldsEff)**REexp
 dL = 1/2 * rho * W**2 * c * cl * B
 dD = 1/2 * rho * W**2 * c * cd * B
 dT = dL * np.cos(phi) - dD * np.sin(phi)
