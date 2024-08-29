@@ -39,7 +39,7 @@ for J in uiuc_J:
         f.write('V = {}\n'.format(V))
         f.write('plotsave = False\n')
     # run the calculation
-    subprocess.run(['python3', 'perform_analysis.py', '--airfoil', 'airfoil-qpropsame.txt'])
+    subprocess.run(['python3', 'perform_analysis_refactor.py', '--airfoil', 'airfoil-qpropsame.txt'])
     # load the results and append to the list
     with open('results.txt', 'r') as file:
         for line in file:
