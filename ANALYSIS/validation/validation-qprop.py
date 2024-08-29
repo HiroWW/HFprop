@@ -5,6 +5,8 @@ import os
 from cycler import cycler
 import colorsys
 import re
+import math
+
 # load uiuc data
 uiuc_data = np.loadtxt('uiuc_apc9by4.7SF_rpm5013.txt', skiprows=2)
 uiuc_J = uiuc_data[:,0]
@@ -76,7 +78,8 @@ for J in uiuc_J:
             # Extract the specific values from the 12th, 13th, and 15th indices
             try:
                 Ct = float(columns[4]) /(rho * rps**2 * (2*R)**4)
-                Cp = float(columns[5]) /(rho * rps**2 * (2*R)**5)
+                Cq = float(columns[5]) /(rho * rps**2 * (2*R)**5)
+                Cp = 2 * math.pi * Cq
                 eta = float(columns[10])
             except ValueError:
                 print("Error: Unable to convert data to float.")
