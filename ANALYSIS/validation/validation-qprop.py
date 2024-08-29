@@ -15,7 +15,7 @@ uiuc_Cp = uiuc_data[:,2]
 uiuc_eta = uiuc_data[:,3]
 rpm = 5013
 rps = rpm/60
-R = 0.1143
+R = 0.114
 rho = 1.225
 
 hfprop_Cp_smoozedtable = []
@@ -170,3 +170,16 @@ plt.legend()
 plt.tight_layout() # 余白を小さくする
 plt.savefig('eta-J-qrop.png')
 # plt.show()
+
+
+plt.figure(dpi=300, figsize=(1.414*4, 4))
+error = (np.array(qprop_Cp) / np.array(hfprop_Cp_smoozedtable) -1 ) * 100
+plt.plot(uiuc_J, error, marker='s')
+plt.xlabel('$J$')
+plt.ylabel('$Cp error$[\%]')
+plt.xlim(0, None)
+plt.ylim(0, 5)
+plt.legend()
+plt.tight_layout() # 余白を小さくする
+plt.savefig('cperror-J-qrop.png')
+
