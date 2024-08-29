@@ -158,7 +158,7 @@ class HFprop:
         self.vt = self.Ut - self.Wt
         self.aoa = self.beta - np.degrees(np.arctan(self.Wa / self.Wt))
         self.W = np.sqrt(self.Wa**2 + self.Wt**2)
-        self.cl[i] = np.interp(self.aoa[i], self.alpha, self.cl_alpha) / np.sqrt(1-(self.W[i]/340)**2)
+        self.cl[i] = (dclda*math.radians(self.aoa[i]) + cl0) / np.sqrt(1-(self.W[i]/340)**2)
         # ここから違う
         stall = False
         if (self.cl[i] < cl_min):
@@ -177,7 +177,7 @@ class HFprop:
         self.cd[i] = (cd0 + cd2*(self.cl[i]-clcd0)**2) * (Reynolds/ReynoldsEff)**REexp
         if (stall):
             acd0 = (clcd0-cl0)/dclda
-            dcd = 2.0*math.sin(self.aoa[i]-acd0)**2
+            dcd = 2.0*math.sin(math.radians((self.aoa[i]))-acd0)**2
             self.cd[i] = self.cd[i] + dcd
         # ここまで違う
         self.lamda = self.r / self.R * self.Wa / self.Wt
@@ -251,22 +251,31 @@ r              cl                aoa                Wa              Wt          
 
 
     def plot_results(self):
+        qprop = np.loadtxt('../secret/qprop_validation_advanceV12.txt')
+        qprop_r_R = qprop[:, 0] / self.R
+        qprop_cl = qprop[:, 3]
+        qprop_cd = qprop[:, 4]
+
         plt.plot(self.alpha, self.cl_alpha)
         plt.xlabel('alpha')
         plt.ylabel('cl')
         plt.grid()
         # plot cl
         plt.clf()
-        plt.plot(self.r_R, self.cl)
+        plt.plot(self.r_R, self.cl, label='hfprop')
+        plt.plot(qprop_r_R, qprop_cl, label='qprop')
         plt.xlabel('r/R')
         plt.ylabel('Cl')
+        plt.legend()
         plt.grid()
         plt.show()
         # plot cd
         plt.clf()
-        plt.plot(self.r_R, self.cd)
+        plt.plot(self.r_R, self.cd, label='hfprop')
+        plt.plot(qprop_r_R, qprop_cd, label='qprop')
         plt.xlabel('r/R')
         plt.ylabel('Cd')
+        plt.legend()
         plt.grid()
         plt.show()
         # plot aoa
