@@ -159,6 +159,9 @@ cd2l = 0.06754529977189071
 clcd0 = 0.8051186313378577
 cd2 = np.where(cl > clcd0, cd2u, cd2l)
 cd = (cd0 + cd2*(cl-clcd0)**2) * (Reynolds/ReynoldsEff)**REexp
+ACD0 = (CLCD0-CL0)/DCLDA
+DCD = 2.0*SIN(A-ACD0)**2
+cd = cd + dcd
 dL = 1/2 * rho * W**2 * c * cl * B
 dD = 1/2 * rho * W**2 * c * cd * B
 dT = dL * np.cos(phi) - dD * np.sin(phi)
@@ -227,7 +230,7 @@ np.savetxt('results.txt', np.array([r, cl, aoa, Wa, Wt, psi, Ut, U, W, va, vt, g
            header=header, fmt='%.14f')
 
 # load qprop data for validation
-qprop = np.loadtxt('../secret/qprop_validation_advance.txt')
+qprop = np.loadtxt('../secret/qprop_validation_advanceV12.txt')
 qprop_r_R = qprop[:, 0] / R
 qprop_c_R = qprop[:, 1] / R
 qprop_beta = qprop[:, 2]
@@ -245,18 +248,23 @@ qprop_Ut = omega * qprop_r
 qprop_U = np.sqrt(V**2 + qprop_Ut**2)
 qprop_gamma = qprop_vt * 4 * math.pi * r / B * qprop_F * np.sqrt(1 + (4 * qprop_lamda * R / (math.pi * B * r ))**2)
 
-plt.clf()
-plt.plot(alpha, airfoil_cl)
-plt.xlabel('alpha')
-plt.ylabel('cl')
-plt.savefig('./debug/cl-alpha.png')
-plt.clf()
-plt.plot(alpha, airfoil_cd)
-plt.xlabel('alpha')
-plt.ylabel('cd')
-plt.savefig('./debug/cd-alpha.png')
+
 
 if (plotsave):
+    # plot input
+    # plot cl-a
+    plt.clf()
+    plt.plot(alpha, airfoil_cl)
+    plt.xlabel('alpha')
+    plt.ylabel('cl')
+    plt.savefig('./debug/cl-alpha.png')
+    # plot cd-a
+    plt.clf()
+    plt.plot(alpha, airfoil_cd)
+    plt.xlabel('alpha')
+    plt.ylabel('cd')
+    plt.savefig('./debug/cd-alpha.png')
+    
     # plot results
     # plot F
     plt.clf()
@@ -346,3 +354,11 @@ if (plotsave):
     plt.xlabel('r/R')
     plt.ylabel('cl')
     plt.savefig('./debug/cl-r.png')
+    #plot cd
+    plt.clf()
+    plt.plot(r_R, cd, marker='o', label='in-house')
+    plt.plot(qprop_r_R, qprop[:, 4], marker='o', label='qprop')
+    plt.legend()
+    plt.xlabel('r/R')
+    plt.ylabel('cd')
+    plt.savefig('./debug/cd-r.png')
