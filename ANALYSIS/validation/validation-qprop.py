@@ -15,7 +15,7 @@ uiuc_Cp = uiuc_data[:,2]
 uiuc_eta = uiuc_data[:,3]
 rpm = 5013
 rps = rpm/60
-R = 0.114
+R = 0.1143
 rho = 1.225
 
 hfprop_Cp_smoozedtable = []

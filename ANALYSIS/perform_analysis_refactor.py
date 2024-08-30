@@ -202,8 +202,8 @@ class HFprop:
         self.T = 0
         self.Q = 0
         for i in range(len(self.r)):
-            self.T += dT[i] * (self.r[1]-self.r[0])
-            self.Q += dQ[i] * (self.r[1]-self.r[0])
+            self.T += dT[i] * (1.0-0.15)/25*0.1143#* (self.r[1]-self.r[0])
+            self.Q += dQ[i] * (1.0-0.15)/25*0.1143#(self.r[1]-self.r[0])
         self.Ct = self.T / (self.RHO * self.RPS**2 * (2*self.R)**4)
         self.Cq = self.Q / (self.RHO * self.RPS**2 * (2*self.R)**5)
         self.Cp = self.Cq * 2 * PI
