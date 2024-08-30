@@ -278,7 +278,7 @@ r              cl                aoa                Wa              Wt          
         plt.ylabel('Cl')
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.savefig('./debug/cl-r_R.png')
         # plot cd
         plt.clf()
         plt.plot(self.r_R, self.cd, label='hfprop')
@@ -287,7 +287,18 @@ r              cl                aoa                Wa              Wt          
         plt.ylabel('Cd')
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.savefig('./debug/cd-r_R.png')
+        # plot errof pf cl, cd
+        plt.clf()
+        error_cl = (qprop_cl / self.cl - 1) * 100
+        error_cd = (qprop_cd / self.cd - 1) * 100
+        plt.plot(qprop_r_R, error_cl, label='cl')
+        # plt.plot(qprop_r_R, error_cd, label='cd')
+        plt.xlabel('r/R')
+        plt.ylabel('error[%]')
+        plt.legend()
+        plt.grid()
+        plt.savefig('./debug/error-r_R.png')
         # plot aoa
         plt.clf()
         plt.plot(self.r_R, self.aoa)
