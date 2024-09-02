@@ -31,8 +31,8 @@ class HFprop:
     def initialize(self):
         args = self.parse_args()
         self.set_condition(args.condition)
-        # self.load_airfoil(args.airfoil)
-        self.set_qpropairfoil()
+        self.load_airfoil(args.airfoil)
+        # self.set_qpropairfoil()
         self.load_geometry(args.geometry)
 
     def parse_args(self):
@@ -123,15 +123,15 @@ class HFprop:
         for i in range(len(self.r_R)):
             def equation(psi):
                 self.psi[i] = psi
-                # self.update()
-                self.update_qprop(i)
+                self.update()
+                # self.update_qprop(i)
                 return self.gamma[i] - 0.5 *self.W[i] * self.c[i] * self.cl[i]
             
             # ans = fsolve(equation, np.arctan2(self.Ua, self.Ut[i]))
             ans = root_scalar(equation, bracket=(0, 90), method='brentq').root
             self.psi[i] = ans
-            self.update_qprop(i)
-        # self.update()
+            # self.update_qprop(i)
+        self.update()
     
     def update(self):
         self.Ut = self.OMEGA * self.r
