@@ -261,10 +261,6 @@ r              cl                cd                c                 aoa        
 
 
     def plot_results(self):
-        qprop = np.loadtxt('../secret/qprop_validation_advanceV12.txt')
-        qprop_r_R = qprop[:, 0] / self.R
-        qprop_cl = qprop[:, 3]
-        qprop_cd = qprop[:, 4]
 
         plt.plot(self.alpha, self.cl_alpha)
         plt.xlabel('alpha')
@@ -273,7 +269,6 @@ r              cl                cd                c                 aoa        
         # plot cl
         plt.clf()
         plt.plot(self.r_R, self.cl, label='hfprop')
-        plt.plot(qprop_r_R, qprop_cl, label='qprop')
         plt.xlabel('r/R')
         plt.ylabel('Cl')
         plt.legend()
@@ -282,23 +277,11 @@ r              cl                cd                c                 aoa        
         # plot cd
         plt.clf()
         plt.plot(self.r_R, self.cd, label='hfprop')
-        plt.plot(qprop_r_R, qprop_cd, label='qprop')
         plt.xlabel('r/R')
         plt.ylabel('Cd')
         plt.legend()
         plt.grid()
         plt.savefig('./debug/cd-r_R.png')
-        # plot errof pf cl, cd
-        plt.clf()
-        error_cl = (qprop_cl / self.cl - 1) * 100
-        error_cd = (qprop_cd / self.cd - 1) * 100
-        plt.plot(qprop_r_R, error_cl, label='cl')
-        # plt.plot(qprop_r_R, error_cd, label='cd')
-        plt.xlabel('r/R')
-        plt.ylabel('error[%]')
-        plt.legend()
-        plt.grid()
-        plt.savefig('./debug/error-r_R.png')
         # plot aoa
         plt.clf()
         plt.plot(self.r_R, self.aoa)
@@ -307,7 +290,7 @@ r              cl                cd                c                 aoa        
         plt.grid()
         # plt.show()
 
-# ============================================== RUN THE COE ============================================== 
+# ============================================== RUN THE CODE ============================================== 
 hfprop = HFprop()
 hfprop.main()
 # =========================================================================================================
