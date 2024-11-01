@@ -253,10 +253,10 @@ W: resultant velocity [m/s]
 va: induced axial velocity [m/s]
 vt: induced tangential velocity [m/s]
 gamma: circulation [-]
-r              cl                aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
+r              cl                cd                c                 aoa                Wa              Wt                psi               Ut                U                 W               va                vt                  gamma
 '''
         # Save the results to 'results.txt' with the specified format
-        np.savetxt('results.txt', np.array([self.r, self.cl, self.aoa, self.Wa, self.Wt, self.psi, self.Ut, self.U, self.W, self.va, self.vt, self.gamma]).T,
+        np.savetxt('results.txt', np.array([self.r, self.cl, self.cd, self.c, self.aoa, self.Wa, self.Wt, self.psi, self.Ut, self.U, self.W, self.va, self.vt, self.gamma]).T,
                 header=header, fmt='%.14f')
 
 
